@@ -49,4 +49,7 @@ return [
     'template' => 'Begin met', 'template_blank' => 'Lege pagina', 'template_blank_desc' => 'Een leeg canvas',
     'template_landing' => 'Landingspagina', 'template_landing_desc' => 'Hero, drie kenmerken en een call-to-action',
     'template_portfolio' => 'Portfolio', 'template_portfolio_desc' => 'Hero, werkgrid, showcase, vaardigheden, referenties en contact',
+    // Toegankelijkheidslabels op publieke pagina's
+    'a11y_close' => 'Sluiten', 'a11y_prev' => 'Vorige', 'a11y_next' => 'Volgende', 'a11y_slide' => 'Dia :n',
+    'a11y_social' => 'Sociale media', 'a11y_language' => 'Taal', 'a11y_filter' => 'Projecten filteren', 'a11y_carousel' => 'Carrousel',
 ];

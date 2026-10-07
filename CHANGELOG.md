@@ -19,4 +19,6 @@ All notable changes to Atlas are documented here. The format follows [Keep a Cha
 - `/sitemap.xml` with hreflang alternates and `<link rel="canonical">`.
 - Page templates (Blank, Landing, Portfolio) with an extensible `PageTemplate` API; `atlas:demo` now uses the Portfolio template.
 - Translation-key guard test.
+- Translatable accessibility labels on public pages (carousel, lightbox, switchers).
+- `atlas:install` creates the `public/storage` link for uploads.
 - Spacing system (`compact` / `comfortable` / `spacious`) with page gutters and block rhythm.

@@ -6,7 +6,7 @@
 @endphp
 <div class="atlas-portfolio atlas-pf--{{ $style }} atlas-pf-hover--{{ $hover }}" style="--cols:{{ $cols }};--gap:{{ $int($props['gap'] ?? null, 20) }}px;--ratio:{{ $ratio }}" data-atlas-portfolio data-atlas-rt>
     @if(($props['filter'] ?? true) && count($categories) > 1)
-        <div class="atlas-pf__filters" role="group" aria-label="Filter">
+        <div class="atlas-pf__filters" role="group" aria-label="{{ __('atlas::ui.a11y_filter') }}">
             <button type="button" class="is-active" data-filter="*" aria-pressed="true">{{ $props['all_label'] ?? 'All' }}</button>
             @foreach($categories as $cat)<button type="button" data-filter="{{ $cat }}" aria-pressed="false">{{ $cat }}</button>@endforeach
         </div>

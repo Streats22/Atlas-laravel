@@ -61,4 +61,13 @@ class DemoTest extends TestCase
         $this->assertMatchesRegularExpression('/atlas-b-section[^"]*atlas-fullbleed|atlas-fullbleed[^"]*atlas-b-section/', $html);
         $this->assertDoesNotMatchRegularExpression('/atlas-b-text[^"]*atlas-fullbleed/', $html);
     }
+
+    public function test_runtime_labels_and_aria_labels_follow_the_locale(): void
+    {
+        $this->app['config']->set('atlas.locales', ['en' => 'English', 'nl' => 'Nederlands']);
+        $this->artisan('atlas:demo')->assertSuccessful();
+
+        $this->get('/demo')->assertSee('"close":"Close"', false)->assertSee('aria-label="Filter projects"', false);
+        $this->get('/demo?lang=nl')->assertSee('"close":"Sluiten"', false)->assertSee('"slide":"Dia :n"', false)->assertSee('aria-label="Projecten filteren"', false)->assertSee('aria-label="Sociale media"', false);
+    }
 }

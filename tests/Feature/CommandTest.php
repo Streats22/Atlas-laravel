@@ -28,4 +28,12 @@ class CommandTest extends TestCase
 
         File::delete([$class, $view]);
     }
+
+    public function test_install_command_runs_without_touching_the_filesystem_when_asked(): void
+    {
+        $this->artisan('atlas:install', ['--no-migrate' => true, '--no-storage-link' => true])
+            ->expectsOutputToContain('Atlas is installed')
+            ->expectsOutputToContain('atlas:demo')
+            ->assertSuccessful();
+    }
 }

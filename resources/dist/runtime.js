@@ -3,6 +3,8 @@
   'use strict';
 
   var d = document, root = d.documentElement;
+  var L = window.AtlasI18n || {};
+  function say(key, fallback, n) { return String(L[key] || fallback).replace(':n', n); }
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var darkMq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : { matches: false };
 
@@ -95,7 +97,7 @@
     if (dots) {
       slides.forEach(function (s, n) {
         var b = d.createElement('button');
-        b.type = 'button'; b.setAttribute('aria-label', 'Slide ' + (n + 1));
+        b.type = 'button'; b.setAttribute('aria-label', say('slide', 'Slide :n', n + 1));
         b.addEventListener('click', function () { go(n); });
         dots.appendChild(b);
       });
@@ -148,9 +150,9 @@
     lb = d.createElement('div');
     lb.className = 'atlas-lightbox'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true');
     function btn(attr, text, label) { var b = d.createElement('button'); b.type = 'button'; b.setAttribute(attr, ''); b.setAttribute('aria-label', label); b.textContent = text; return b; }
-    var close = btn('data-close', '×', 'Close');
+    var close = btn('data-close', '×', say('close', 'Close'));
     lb.appendChild(fig); lb.appendChild(close);
-    if (group.length > 1) { lb.appendChild(btn('data-prev', '‹', 'Previous')); lb.appendChild(btn('data-next', '›', 'Next')); }
+    if (group.length > 1) { lb.appendChild(btn('data-prev', '‹', say('prev', 'Previous'))); lb.appendChild(btn('data-next', '›', say('next', 'Next'))); }
     function show(n) {
       i = (n + group.length) % group.length;
       var a = group[i];

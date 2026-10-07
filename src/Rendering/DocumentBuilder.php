@@ -128,13 +128,25 @@ final class DocumentBuilder
         }
 
         if ($this->needsRuntime($theme, $html)) {
-            $scripts .= '<script id="atlas-runtime">' . self::file('runtime.js') . "</script>\n";
+            $scripts .= '<script>window.AtlasI18n=' . json_encode($this->runtimeLabels(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_THROW_ON_ERROR) . ";</script>\n"
+                . '<script id="atlas-runtime">' . self::file('runtime.js') . "</script>\n";
         }
         if ($custom && filled($page->js)) {
             $scripts .= '<script id="atlas-page-js">' . $page->js . "</script>\n";
         }
 
         return $scripts;
+    }
+
+    /** Translated strings the runtime needs for dynamically created controls. */
+    private function runtimeLabels(): array
+    {
+        return [
+            'close' => __('atlas::ui.a11y_close'),
+            'prev' => __('atlas::ui.a11y_prev'),
+            'next' => __('atlas::ui.a11y_next'),
+            'slide' => __('atlas::ui.a11y_slide', ['n' => ':n']),
+        ];
     }
 
     /** The runtime is only inlined on pages whose markup asks for it. */

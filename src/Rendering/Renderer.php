@@ -8,6 +8,7 @@ use Atlas\Atlas;
 use Atlas\Blocks\Block;
 use Atlas\Blocks\CommonFields;
 use Atlas\Models\Page;
+use Atlas\Support\Features;
 use Atlas\Support\Locales;
 use Illuminate\Support\HtmlString;
 use Throwable;
@@ -97,7 +98,7 @@ class Renderer
                 : '';
         }
 
-        if (config('atlas.custom_code') && filled($props['custom_css'] ?? null)) {
+        if (Features::customCode() && filled($props['custom_css'] ?? null)) {
             $inner .= '<style>' . self::scopeCss((string) $props['custom_css'], $domId) . '</style>';
         }
 
@@ -118,7 +119,7 @@ class Renderer
 
     private function domId(string $id, array $props): string
     {
-        $custom = config('atlas.custom_code') && ! empty($props['html_id'])
+        $custom = Features::customCode() && ! empty($props['html_id'])
             ? RenderNode::cleanId($props['html_id'])
             : '';
 

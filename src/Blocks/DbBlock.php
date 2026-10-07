@@ -6,6 +6,7 @@ namespace Atlas\Blocks;
 
 use Atlas\Models\CustomBlock;
 use Atlas\Rendering\Renderer;
+use Atlas\Support\Features;
 use Atlas\Support\Template;
 use Illuminate\Support\HtmlString;
 
@@ -53,6 +54,10 @@ class DbBlock extends Block
 
     public function render(array $props, HtmlString $children, array $node, bool $editing): string
     {
+        if (! Features::customCode()) {
+            return ''; // builder blocks are code; they stop rendering when custom code is disabled
+        }
+
         $domId = $node['dom_id'] ?? 'atlas-' . ($node['id'] ?? '');
         $context = array_merge($props, [
             'children' => (string) $children,

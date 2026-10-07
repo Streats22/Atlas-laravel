@@ -20,17 +20,18 @@ use Atlas\Http\Controllers\SitemapController;
 use Atlas\Http\Middleware\Authorize;
 use Atlas\Models\CustomBlock;
 use Atlas\Packaging\MediaUrls;
+use Atlas\Support\Features;
 use Atlas\Support\Locales;
+use Atlas\Support\SlugPolicy;
 use Atlas\Templates\BlankTemplate;
 use Atlas\Templates\LandingTemplate;
 use Atlas\Templates\PortfolioTemplate;
 use Atlas\Templates\TemplateRegistry;
+use Illuminate\Routing\Events\Routing;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use ReflectionClass;
 
 class AtlasServiceProvider extends ServiceProvider
 {
@@ -100,10 +101,10 @@ class AtlasServiceProvider extends ServiceProvider
             Builtin\LanguageSwitcher::class, Builtin\ThemeToggle::class,
         ];
 
-        if (config('atlas.custom_code')) {
+        if (Features::customCode()) {
             $builtin[] = Builtin\CustomCode::class;
         }
-        if (config('atlas.allow_blade_code')) {
+        if (Features::bladeCode()) {
             $builtin[] = Builtin\BladeCode::class;
         }
 
@@ -119,6 +120,10 @@ class AtlasServiceProvider extends ServiceProvider
 
         // Blocks made in the editor's block builder are loaded lazily from the database.
         $atlas->blocks()->lazy(function ($registry) {
+            if (! Features::customCode()) {
+                return;
+            }
+
             try {
                 foreach (CustomBlock::query()->get() as $model) {
                     if (! $registry->has($model->type)) {
@@ -134,23 +139,10 @@ class AtlasServiceProvider extends ServiceProvider
     /** Auto-register every Block subclass found in app/Atlas/Blocks. */
     protected function discoverBlocks(Atlas $atlas): void
     {
-        $path = config('atlas.discover.path') ?? app_path('Atlas/Blocks');
-        $namespace = config('atlas.discover.namespace') ?? $this->app->getNamespace() . 'Atlas\\Blocks';
-
-        if (! is_dir($path)) {
-            return;
-        }
-
-        foreach (File::allFiles($path) as $file) {
-            $relative = str_replace(['/', '.php'], ['\\', ''], $file->getRelativePathname());
-            $class = rtrim($namespace, '\\') . '\\' . $relative;
-
-            if (class_exists($class)
-                && is_subclass_of($class, Block::class)
-                && ! (new ReflectionClass($class))->isAbstract()) {
-                $atlas->block($class);
-            }
-        }
+        $atlas->discover(
+            config('atlas.discover.path') ?? app_path('Atlas/Blocks'),
+            config('atlas.discover.namespace') ?? $this->app->getNamespace() . 'Atlas\\Blocks',
+        );
     }
 
     protected function registerRoutes(): void
@@ -170,37 +162,60 @@ class AtlasServiceProvider extends ServiceProvider
             Route::middleware(Authorize::class)->group(__DIR__ . '/../routes/web.php');
         });
 
-        // Registered after every other route so the app always wins.
-        $this->app->booted(function () {
-            if (! config('atlas.frontend.enabled')) {
-                return;
+        // Public page routes are added at routing time, i.e. after every application route has been
+        // loaded, so the app always wins (e.g. its own "/"); Atlas only answers what nothing else matches.
+        $registered = false;
+        $this->app['events']->listen(Routing::class, function () use (&$registered): void {
+            if (! $registered) {
+                $registered = true;
+                $this->registerFrontendRoutes();
+            }
+        });
+    }
+
+    protected function registerFrontendRoutes(): void
+    {
+        if (! config('atlas.frontend.enabled')) {
+            return;
+        }
+
+        $prefix = trim((string) config('atlas.frontend.prefix'), '/');
+
+        Route::middleware(config('atlas.frontend.middleware', ['web']))->group(function () use ($prefix) {
+            // /{atlasLocale} and /{atlasLocale}/{atlasSlug} for non-default locales (must come before the generic slug route)
+            $others = array_map('preg_quote', array_values(array_diff(array_keys(Locales::available()), [Locales::default()])));
+            if (Locales::prefixed() && $others) {
+                $pattern = implode('|', $others);
+                Route::get(trim($prefix . '/{atlasLocale}', '/'), [FrontendController::class, 'homeLocale'])
+                    ->where('atlasLocale', $pattern)->name('atlas.home.locale');
+                Route::get(trim($prefix . '/{atlasLocale}/{atlasSlug}', '/'), [FrontendController::class, 'showLocale'])
+                    ->where('atlasLocale', $pattern)->where('atlasSlug', SlugPolicy::ROUTE_PATTERN)->name('atlas.page.locale');
             }
 
-            $prefix = trim((string) config('atlas.frontend.prefix'), '/');
+            // Laravel keys routes by URI, so registering a URI the app already owns would silently replace it.
+            if (config('atlas.frontend.sitemap') && ! $this->appDefines('sitemap.xml')) {
+                Route::get('sitemap.xml', SitemapController::class)->name('atlas.sitemap');
+            }
 
-            Route::middleware(config('atlas.frontend.middleware', ['web']))->group(function () use ($prefix) {
-                // /{locale} and /{locale}/{slug} for non-default locales (must come before the generic slug route)
-                $others = array_map('preg_quote', array_values(array_diff(array_keys(Locales::available()), [Locales::default()])));
-                if (Locales::prefixed() && $others) {
-                    $pattern = implode('|', $others);
-                    Route::get(trim($prefix . '/{locale}', '/'), [FrontendController::class, 'homeLocale'])
-                        ->where('locale', $pattern)->name('atlas.home.locale');
-                    Route::get(trim($prefix . '/{locale}/{slug}', '/'), [FrontendController::class, 'showLocale'])
-                        ->where('locale', $pattern)->where('slug', '[a-z0-9]+(?:[\-\/][a-z0-9]+)*')->name('atlas.page.locale');
-                }
+            if ($prefix === '' && config('atlas.frontend.home') && ! $this->appDefines('/')) {
+                Route::get('/', [FrontendController::class, 'home'])->name('atlas.home');
+            }
 
-                if (config('atlas.frontend.sitemap')) {
-                    Route::get('sitemap.xml', SitemapController::class)->name('atlas.sitemap');
-                }
-
-                if ($prefix === '' && config('atlas.frontend.home')) {
-                    Route::get('/', [FrontendController::class, 'home'])->name('atlas.home');
-                }
-
-                Route::get(trim($prefix . '/{slug}', '/'), [FrontendController::class, 'show'])
-                    ->where('slug', '[a-z0-9]+(?:[\-\/][a-z0-9]+)*')
-                    ->name('atlas.page');
-            });
+            Route::get(trim($prefix . '/{atlasSlug}', '/'), [FrontendController::class, 'show'])
+                ->where('atlasSlug', SlugPolicy::ROUTE_PATTERN)
+                ->name('atlas.page');
         });
+    }
+
+    /** Does the application already have a GET route for this URI? */
+    private function appDefines(string $uri): bool
+    {
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            if ($route->uri() === $uri && in_array('GET', $route->methods(), true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

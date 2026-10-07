@@ -1,5 +1,5 @@
 @php
-    $bg = $safe($props['bg_image'] ?? '');
+    $bg = $cssUrl($props['bg_image'] ?? '');
     $align = ($props['align'] ?? 'center') === 'left' ? 'left' : 'center';
     $primary = $safe($props['primary_url'] ?? '#') ?: '#';
     $secondary = $safe($props['secondary_url'] ?? '#') ?: '#';

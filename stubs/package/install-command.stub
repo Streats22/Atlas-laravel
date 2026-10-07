@@ -24,7 +24,11 @@ class InstallCommand extends Command
         }
 
         [$bundle, $media] = $archive->read({{ class }}ServiceProvider::bundlePath());
-        $result = $importer->import($bundle, $media, (bool) $this->option('force'));
+        try {
+            $result = $importer->import($bundle, $media, (bool) $this->option('force'));
+        } finally {
+            $archive->cleanup();
+        }
 
         $this->info("Pages: {$result->pagesCreated} created, {$result->pagesUpdated} updated, " . count($result->pagesSkipped) . ' skipped.');
         $this->info("Blocks: {$result->blocksCreated} created, {$result->blocksUpdated} updated, " . count($result->blocksSkipped) . ' skipped.');

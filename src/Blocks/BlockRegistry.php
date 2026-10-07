@@ -8,6 +8,9 @@ use InvalidArgumentException;
 
 class BlockRegistry
 {
+    /** Valid block machine names (builder blocks, imports, tree nodes). */
+    public const TYPE_PATTERN = '/^[a-z][a-z0-9-]{1,48}$/';
+
     /** @var array<string, Block> */
     protected array $blocks = [];
 
@@ -39,8 +42,8 @@ class BlockRegistry
     public function register(Block|string $block): static
     {
         if (is_string($block)) {
-            if (! is_subclass_of($block, Block::class)) {
-                throw new InvalidArgumentException("[$block] must extend " . Block::class . '.');
+            if (! is_subclass_of($block, Block::class) || (new \ReflectionClass($block))->isAbstract()) {
+                throw new InvalidArgumentException("[$block] must be a concrete class extending " . Block::class . '.');
             }
             $block = app($block);
         }

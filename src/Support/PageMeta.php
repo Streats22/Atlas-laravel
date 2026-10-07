@@ -13,12 +13,6 @@ use Atlas\Enums\ThemeMode;
  */
 final class PageMeta
 {
-    /** Scalar keys that may be stored. */
-    private const SCALARS = [
-        'description', 'theme', 'theme_toggle', 'accent', 'accent_dark',
-        'font', 'heading_font', 'spacing', 'og_image',
-    ];
-
     private function __construct(private readonly array $data)
     {
     }
@@ -28,14 +22,14 @@ final class PageMeta
         return new self(is_array($value) ? $value : []);
     }
 
-    /** Keep only keys Atlas understands; drop empty values and unknown locales. */
+    /** Keep only keys Atlas understands, with valid values; drop everything else. */
     public static function sanitize(array $input): self
     {
         $clean = [];
-        foreach (self::SCALARS as $key) {
-            $value = $input[$key] ?? null;
+        foreach (self::validators() as $key => $validate) {
+            $value = $validate($input[$key] ?? null);
             if ($value !== null && $value !== '') {
-                $clean[$key] = $key === 'theme_toggle' ? (bool) $value : $value;
+                $clean[$key] = $value;
             }
         }
 
@@ -47,6 +41,25 @@ final class PageMeta
         }
 
         return new self($clean);
+    }
+
+    /** @return array<string, \Closure(mixed): mixed> One validator per scalar key; null = invalid. */
+    private static function validators(): array
+    {
+        $text = static fn (int $max) => static fn ($v) => is_string($v) ? mb_substr(trim($v), 0, $max) : null;
+        $hex = static fn ($v) => is_string($v) && preg_match(Theme::HEX_COLOR, $v) ? $v : null;
+
+        return [
+            'description' => $text(500),
+            'og_image' => $text(500),
+            'theme' => static fn ($v) => ThemeMode::tryFrom((string) $v)?->value,
+            'spacing' => static fn ($v) => Spacing::tryFrom((string) $v)?->value,
+            'theme_toggle' => static fn ($v) => $v === null || $v === '' ? null : (bool) $v,
+            'accent' => $hex,
+            'accent_dark' => $hex,
+            'font' => static fn ($v) => is_string($v) && isset(Theme::FONTS[$v]) ? $v : null,
+            'heading_font' => static fn ($v) => is_string($v) && ($v === 'same' || isset(Theme::FONTS[$v])) ? $v : null,
+        ];
     }
 
     /** @return array<string, string> */

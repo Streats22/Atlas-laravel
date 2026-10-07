@@ -20,6 +20,9 @@ final class BundleArchive
 {
     public const MANIFEST = 'bundle.json';
 
+    /** @var list<string> */
+    private array $temp = [];
+
     public function __construct(private readonly MediaUrls $urls)
     {
     }
@@ -66,10 +69,10 @@ final class BundleArchive
         File::put($dir . '/' . self::MANIFEST, $bundle->toJson());
 
         if ($withMedia) {
-            foreach ($bundle->media as $relative) {
-                $target = $dir . '/media/' . $this->mediaName($relative);
+            foreach ($this->safeMedia($bundle) as $name) {
+                $target = $dir . '/media/' . $name;
                 File::ensureDirectoryExists(dirname($target));
-                File::put($target, Storage::disk($this->urls->disk())->get($relative));
+                File::put($target, Storage::disk($this->urls->disk())->get($this->urls->path($name)));
             }
         }
 
@@ -87,8 +90,8 @@ final class BundleArchive
 
         $zip->addFromString(self::MANIFEST, $bundle->toJson());
         if ($withMedia) {
-            foreach ($bundle->media as $relative) {
-                $zip->addFromString('media/' . $this->mediaName($relative), Storage::disk($this->urls->disk())->get($relative));
+            foreach ($this->safeMedia($bundle) as $name) {
+                $zip->addFromString('media/' . $name, Storage::disk($this->urls->disk())->get($this->urls->path($name)));
             }
         }
         $zip->close();
@@ -106,6 +109,7 @@ final class BundleArchive
 
         $tmp = sys_get_temp_dir() . '/atlas-bundle-' . bin2hex(random_bytes(6));
         File::ensureDirectoryExists($tmp);
+        $this->temp[] = $tmp;
 
         // Refuse path traversal ("zip slip") before extracting anything.
         for ($i = 0; $i < $zip->numFiles; $i++) {
@@ -131,9 +135,18 @@ final class BundleArchive
         return Bundle::fromJson((string) file_get_contents($file));
     }
 
-    /** "atlas/a.jpg" → "a.jpg" (the directory comes from the target site's config). */
-    private function mediaName(string $relative): string
+    /** @return list<string> */
+    private function safeMedia(Bundle $bundle): array
     {
-        return ltrim(substr($relative, strlen($this->urls->directory())), '/');
+        return array_values(array_filter($bundle->media, MediaUrls::isSafeName(...)));
+    }
+
+    /** Remove temporary directories created while reading zip bundles. */
+    public function cleanup(): void
+    {
+        foreach ($this->temp as $dir) {
+            File::deleteDirectory($dir);
+        }
+        $this->temp = [];
     }
 }

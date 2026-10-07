@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Atlas\Http\Requests;
 
+use Atlas\Blocks\BlockRegistry;
 use Atlas\Blocks\FieldNormalizer;
 use Atlas\Facades\Atlas;
 use Atlas\Models\CustomBlock;
+use Atlas\Support\Features;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +17,7 @@ class SaveBlockRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) config('atlas.custom_code');
+        return Features::customCode();
     }
 
     public function rules(): array
@@ -27,7 +29,7 @@ class SaveBlockRequest extends FormRequest
         return [
             'label' => ['required', 'string', 'max:80'],
             'type' => [
-                $existing ? 'sometimes' : 'required', 'string', 'regex:/^[a-z][a-z0-9-]{1,48}$/',
+                $existing ? 'sometimes' : 'required', 'string', 'regex:' . BlockRegistry::TYPE_PATTERN,
                 Rule::unique('atlas_blocks', 'type')->ignore($existing?->getKey()),
                 $this->notTaken(...),
             ],

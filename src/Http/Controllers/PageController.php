@@ -11,7 +11,9 @@ use Atlas\Enums\Spacing;
 use Atlas\Http\Requests\SavePageRequest;
 use Atlas\Models\CustomBlock;
 use Atlas\Models\Page;
+use Atlas\Support\Features;
 use Atlas\Support\Locales;
+use Atlas\Support\SlugPolicy;
 use Atlas\Support\Theme;
 use Atlas\Support\Tree;
 use Atlas\Templates\NodeFactory;
@@ -69,7 +71,7 @@ class PageController
 
         $page = Page::create([
             'title' => $data['title'],
-            'slug' => $this->uniqueSlug(Str::slug($data['title']) ?: 'page'),
+            'slug' => $this->uniqueSlug(Str::slug($data['title'])),
             'status' => PageStatus::Draft,
             'content' => $template?->tree(new NodeFactory($this->atlas)) ?? [],
             'meta' => $template?->meta() ?? [],
@@ -86,7 +88,7 @@ class PageController
     public function update(SavePageRequest $request, Page $page): JsonResponse
     {
         $data = $request->validated();
-        $custom = (bool) config('atlas.custom_code');
+        $custom = Features::customCode();
 
         $page->fill([
             'title' => $data['title'],
@@ -127,7 +129,7 @@ class PageController
     /** Everything the editor SPA needs, serialised into the page. */
     private function editorConfig(Page $page): array
     {
-        $custom = (bool) config('atlas.custom_code');
+        $custom = Features::customCode();
 
         return [
             'page' => [
@@ -167,11 +169,6 @@ class PageController
 
     private function uniqueSlug(string $base): string
     {
-        $slug = $base;
-        for ($i = 2; Page::where('slug', $slug)->exists(); $i++) {
-            $slug = $base . '-' . $i;
-        }
-
-        return $slug;
+        return SlugPolicy::unique($base, fn (string $slug) => Page::where('slug', $slug)->exists());
     }
 }

@@ -23,10 +23,13 @@ class PackageTest extends TestCase
 
     public function test_every_shipped_block_is_registered(): void
     {
-        foreach (glob(__DIR__ . '/../src/Blocks/*.php') ?: [] as $file) {
-            $class = '{{ namespace }}\\Blocks\\' . basename($file, '.php');
+        $classes = app(\Atlas\Blocks\BlockDiscoverer::class)->find(__DIR__ . '/../src/Blocks', '{{ namespace }}\\Blocks');
+
+        foreach ($classes as $class) {
             $this->assertTrue(app(\Atlas\Atlas::class)->blocks()->has((new $class())->type()));
         }
+
+        $this->addToAssertionCount(1);
     }
 
     public function test_the_bundle_imports_cleanly(): void

@@ -9,6 +9,7 @@ use Atlas\Enums\Spacing;
 use Atlas\Enums\ThemeMode;
 use Atlas\Models\Page;
 use Atlas\Support\PageMeta;
+use Atlas\Support\SlugPolicy;
 use Atlas\Support\Theme;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -25,12 +26,12 @@ class SavePageRequest extends FormRequest
     {
         /** @var Page $page */
         $page = $this->route('page');
-        $hex = ['nullable', 'regex:/^#[0-9a-fA-F]{3,8}$/'];
+        $hex = ['nullable', 'regex:' . Theme::HEX_COLOR];
 
         return [
             'title' => ['required', 'string', 'max:255'],
             'slug' => [
-                'required', 'string', 'max:190', 'regex:/^[a-z0-9]+(?:[\-\/][a-z0-9]+)*$/',
+                'required', 'string', 'max:190', 'regex:' . SlugPolicy::PATTERN,
                 Rule::unique($page->getTable(), 'slug')->ignore($page->getKey()),
                 $this->notReserved(...),
             ],
@@ -59,9 +60,7 @@ class SavePageRequest extends FormRequest
     /** The slug must not collide with the editor's own URL space. */
     private function notReserved(string $attribute, mixed $value, \Closure $fail): void
     {
-        $reserved = trim((string) config('atlas.path'), '/');
-
-        if ($reserved !== '' && ($value === $reserved || str_starts_with((string) $value, $reserved . '/'))) {
+        if (SlugPolicy::isReserved((string) $value)) {
             $fail('That slug is reserved for the Atlas editor.');
         }
     }

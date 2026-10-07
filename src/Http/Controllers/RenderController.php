@@ -6,6 +6,7 @@ namespace Atlas\Http\Controllers;
 
 use Atlas\Facades\Atlas;
 use Atlas\Support\Locales;
+use Atlas\Support\PageMeta;
 use Atlas\Support\Tree;
 use Illuminate\Http\Request;
 
@@ -32,7 +33,7 @@ class RenderController
                 'content' => Tree::sanitize($data['content']),
                 'css' => $data['css'] ?? null,
                 'head' => $data['head'] ?? null,
-                'meta' => $data['meta'] ?? [],
+                'meta' => PageMeta::sanitize((array) ($data['meta'] ?? []))->toArray(),
             ], editing: true);
         } finally {
             app()->setLocale($previous);

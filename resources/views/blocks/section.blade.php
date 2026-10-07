@@ -1,11 +1,11 @@
 @php
     $widths = ['narrow' => '720px', 'normal' => '1100px', 'wide' => '1400px', 'full' => 'none'];
     $max = $widths[$props['max_width'] ?? 'normal'] ?? '1100px';
-    $bg = $safe($props['bg_image'] ?? '');
+    $bg = $cssUrl($props['bg_image'] ?? '');
     $tone = $pick($props['tone'] ?? null, ['none', 'surface', 'accent', 'inverted'], 'none');
     $style = '';
     if (isset($props['padding_y']) && $props['padding_y'] !== '') { $style .= '--s-py:'.$int($props['padding_y'], 0, 0, 400).'px;'; }
-    if (! empty($props['background'])) { $style .= 'background:'.$props['background'].';'; }
+    if ($cssColor($props['background'] ?? '') !== '') { $style .= 'background:'.$cssColor($props['background']).';'; }
     if ($int($props['min_height'] ?? null, 0) > 0) { $style .= 'min-height:'.$int($props['min_height'], 0).'px;'; }
     $valign = $pick($props['valign'] ?? null, ['start', 'center', 'end'], 'start');
 @endphp

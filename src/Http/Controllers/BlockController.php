@@ -9,6 +9,7 @@ use Atlas\Blocks\FieldNormalizer;
 use Atlas\Facades\Atlas;
 use Atlas\Http\Requests\SaveBlockRequest;
 use Atlas\Models\CustomBlock;
+use Atlas\Support\Features;
 use Illuminate\Http\JsonResponse;
 
 /** CRUD for blocks created in the editor's block builder. */
@@ -34,7 +35,7 @@ class BlockController
 
     public function destroy(CustomBlock $block): JsonResponse
     {
-        abort_unless(config('atlas.custom_code'), 403, 'Custom code is disabled.');
+        abort_unless(Features::customCode(), 403, 'Custom code is disabled.');
 
         Atlas::blocks()->forget($block->type);
         $block->delete();

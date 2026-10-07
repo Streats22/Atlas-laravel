@@ -97,7 +97,8 @@ abstract class Block
     /**
      * Render the block. Override for full control; the default renders
      * view() with: $props, $children, $node, $id, $domId, $editing, $locale and the
-     * helpers $safe(url), $pick(value, allowed, default), $int(value, default, min, max), $aspect(value) (+ data()).
+     * helpers $safe(url), $pick(value, allowed, default), $int(value, default, min, max), $aspect(value),
+     * $cssUrl(url), $cssColor(value), $cssLength(value, default) (+ data()).
      *
      * @param  array  $node  The raw node: id, type, props, children, dom_id
      */
@@ -112,6 +113,9 @@ abstract class Block
             'pick' => ViewHelpers::pick(...),
             'int' => ViewHelpers::int(...),
             'aspect' => ViewHelpers::ratio(...),
+            'cssUrl' => ViewHelpers::cssUrl(...),
+            'cssColor' => ViewHelpers::cssColor(...),
+            'cssLength' => ViewHelpers::cssLength(...),
             'locale' => app()->getLocale(),
             'domId' => $node['dom_id'] ?? 'atlas-' . ($node['id'] ?? ''),
             'editing' => $editing,

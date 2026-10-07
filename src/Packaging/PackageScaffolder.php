@@ -59,7 +59,7 @@ final class PackageScaffolder
         }
 
         $vars = $this->variables($spec, $hasBundle, $hasViews, $hasLang);
-        $this->render('composer.json.stub', $target . '/composer.json', $vars);
+        $this->put($target . '/composer.json', $this->composerJson($spec) . "\n");
         $this->render('provider.stub', $target . '/src/' . $vars['{{ class }}'] . 'ServiceProvider.php', $vars);
         $this->render('install-command.stub', $target . '/src/Console/InstallCommand.php', $vars);
         $this->render('README.md.stub', $target . '/README.md', $vars);
@@ -100,7 +100,9 @@ final class PackageScaffolder
 
             $relativeDir = trim(str_replace('/', '\\', $file->getRelativePath()), '\\');
             $namespace = $spec->namespace . '\\Blocks' . ($relativeDir !== '' ? '\\' . $relativeDir : '');
-            $code = (string) preg_replace('/^namespace\s+[^;]+;/m', "namespace {$namespace};", $file->getContents(), 1);
+            // Point every reference to the app's block namespace (extends, use, new …) at the package's.
+            $code = str_replace($this->blocksNamespace(), $spec->namespace . '\\Blocks', $file->getContents());
+            $code = (string) preg_replace('/^namespace\s+[^;]+;/m', "namespace {$namespace};", $code, 1);
 
             foreach ($this->appReferences($code) as $reference) {
                 $this->warnings[] = "{$file->getRelativePathname()} references {$reference} — bundle that class too, or the package will fail outside this app.";
@@ -160,6 +162,26 @@ final class PackageScaffolder
     }
 
     /** The Atlas version constraint for the generated package ("^1.2" when tagged, otherwise "*"). */
+    /** Built as an array so quotes etc. in the description can never produce invalid JSON. */
+    private function composerJson(PackageSpec $spec): string
+    {
+        return json_encode([
+            'name' => $spec->name(),
+            'description' => $spec->description,
+            'keywords' => ['laravel', 'atlas', 'page-builder'],
+            'license' => $spec->license,
+            'type' => 'library',
+            'require' => ['php' => '^8.3', 'streats22/atlas' => $this->atlasConstraint()],
+            'require-dev' => ['orchestra/testbench' => '^10.0|^11.0', 'phpunit/phpunit' => '^11.0|^12.0'],
+            'autoload' => ['psr-4' => [$spec->namespace . '\\' => 'src/']],
+            'autoload-dev' => ['psr-4' => [$spec->namespace . '\\Tests\\' => 'tests/']],
+            'extra' => ['laravel' => ['providers' => [$spec->namespace . '\\' . $spec->studly() . 'ServiceProvider']]],
+            'scripts' => ['test' => 'vendor/bin/phpunit'],
+            'minimum-stability' => 'stable',
+            'prefer-stable' => true,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    }
+
     private function atlasConstraint(): string
     {
         $version = class_exists(InstalledVersions::class) && InstalledVersions::isInstalled('streats22/atlas')

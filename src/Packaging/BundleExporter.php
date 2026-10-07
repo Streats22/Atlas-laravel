@@ -73,6 +73,6 @@ final class BundleExporter
     {
         $disk = Storage::disk($this->urls->disk());
 
-        return array_values(array_filter($paths, fn (string $path) => $disk->exists($path)));
+        return array_values(array_filter($paths, fn (string $name) => $disk->exists($this->urls->path($name))));
     }
 }

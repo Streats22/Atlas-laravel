@@ -27,6 +27,9 @@ final class Theme
         'muted' => '#a0aac0', 'border' => '#273252', 'shadow' => '0 10px 30px rgba(0,0,0,.45)',
     ];
 
+    /** Hex colour (#rgb … #rrggbbaa); shared by validation, theming and view helpers. */
+    public const HEX_COLOR = '/^#[0-9a-fA-F]{3,8}$/';
+
     private const DEFAULT_ACCENT = '#4f46e5';
 
     private const DEFAULT_ACCENT_DARK = '#818cf8';
@@ -49,7 +52,7 @@ final class Theme
         $pick = static fn (string $key, mixed $fallback) => $meta->get($key, $defaults[$key] ?? $fallback);
 
         return new self(
-            mode: $meta->themeMode() ?? ThemeMode::tryFrom((string) ($defaults['mode'] ?? '')) ?? ThemeMode::Auto,
+            mode: $meta->themeMode() ?? ThemeMode::tryFrom((string) ($defaults['default'] ?? $defaults['mode'] ?? '')) ?? ThemeMode::Auto,
             toggle: (bool) $meta->get('theme_toggle', $defaults['toggle'] ?? false),
             accent: self::color($pick('accent', self::DEFAULT_ACCENT), self::DEFAULT_ACCENT),
             accentDark: self::color($pick('accent_dark', self::DEFAULT_ACCENT_DARK), self::DEFAULT_ACCENT_DARK),
@@ -66,7 +69,7 @@ final class Theme
 
     private static function color(mixed $value, string $fallback): string
     {
-        return is_string($value) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $value) ? $value : $fallback;
+        return is_string($value) && preg_match(self::HEX_COLOR, $value) ? $value : $fallback;
     }
 
     private static function fontKey(mixed $value, string $fallback): string

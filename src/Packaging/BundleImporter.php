@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Atlas\Packaging;
 
 use Atlas\Atlas;
+use Atlas\Blocks\BlockRegistry;
 use Atlas\Blocks\FieldNormalizer;
 use Atlas\Enums\PageStatus;
 use Atlas\Models\CustomBlock;
 use Atlas\Models\Page;
+use Atlas\Support\PageMeta;
+use Atlas\Support\SlugPolicy;
 use Atlas\Support\Tree;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,10 +79,11 @@ final class BundleImporter
         foreach ($bundle->pages as $raw) {
             $data = $this->urls->import($raw);
             $slug = (string) ($data['slug'] ?? '');
-            $existing = Page::where('slug', $slug)->first();
+            $existing = SlugPolicy::usable($slug) ? Page::where('slug', $slug)->first() : null;
 
-            if ($slug === '' || ($existing && ! $force)) {
-                $result->pagesSkipped[] = $slug ?: '?';
+            // Same rules as the editor: valid, non-reserved slug; never clobber without --force.
+            if (! SlugPolicy::usable($slug) || ($existing && ! $force)) {
+                $result->pagesSkipped[] = $slug !== '' ? $slug : '?';
 
                 continue;
             }
@@ -91,8 +96,8 @@ final class BundleImporter
                 'css' => $data['css'] ?? null,
                 'js' => $data['js'] ?? null,
                 'head' => $data['head'] ?? null,
-                'meta' => (array) ($data['meta'] ?? []),
-                'published_at' => $data['published_at'] ?? null,
+                'meta' => PageMeta::sanitize((array) ($data['meta'] ?? []))->toArray(),
+                'published_at' => $this->date($data['published_at'] ?? null),
             ];
 
             $existing ? $existing->update($payload) : Page::create($payload);
@@ -109,12 +114,11 @@ final class BundleImporter
         $disk = Storage::disk($this->urls->disk());
 
         foreach ($bundle->media as $relative) {
-            $name = ltrim(substr($relative, strlen($this->urls->directory())), '/');
-            $source = $mediaDir . '/' . $name;
-            $target = $this->urls->directory() . '/' . $name;
+            $source = $mediaDir . '/' . $relative;
+            $target = $this->urls->path($relative);
 
             // Only plain files inside the media directory, never outside it.
-            if (str_contains($name, '..') || ! is_file($source) || ($disk->exists($target) && ! $force)) {
+            if (! MediaUrls::isSafeName($relative) || ! is_file($source) || ($disk->exists($target) && ! $force)) {
                 continue;
             }
 
@@ -123,8 +127,17 @@ final class BundleImporter
         }
     }
 
+    private function date(mixed $value): ?Carbon
+    {
+        try {
+            return is_string($value) && $value !== '' ? Carbon::parse($value) : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function isValidType(mixed $type): bool
     {
-        return is_string($type) && preg_match('/^[a-z][a-z0-9-]{1,48}$/', $type) === 1;
+        return is_string($type) && preg_match(BlockRegistry::TYPE_PATTERN, $type) === 1;
     }
 }

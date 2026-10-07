@@ -21,7 +21,7 @@ class Template
     {
         $tokens = self::tokenize($tpl);
         $i = 0;
-        $ast = self::parse($tokens, $i);
+        $ast = self::parse($tokens, $i, 0);
 
         return self::run($ast, [$context]);
     }
@@ -60,21 +60,27 @@ class Template
     }
 
     /** Parse tokens into a node list until a closing/else token. */
-    private static function parse(array $tokens, int &$i): array
+    private static function parse(array $tokens, int &$i, int $depth): array
     {
         $nodes = [];
         while ($i < count($tokens)) {
             $t = $tokens[$i];
             if ($t[0] === 'close' || $t[0] === 'else') {
+                if ($depth === 0) {
+                    $i++; // a stray {{/if}} / {{else}} outside any block is ignored
+
+                    continue;
+                }
+
                 return $nodes;
             }
             $i++;
             if ($t[0] === 'open') {
-                $body = self::parse($tokens, $i);
+                $body = self::parse($tokens, $i, $depth + 1);
                 $else = [];
                 if (($tokens[$i][0] ?? null) === 'else') {
                     $i++;
-                    $else = self::parse($tokens, $i);
+                    $else = self::parse($tokens, $i, $depth + 1);
                 }
                 $i++; // closing tag
                 $nodes[] = [$t[1], $t[2], $body, $else];
@@ -131,7 +137,8 @@ class Template
                     if (str_starts_with($name, 'url:')) {
                         $out .= e(Url::safe(self::str(self::lookup(trim(substr($name, 4)), $stack))));
                     } elseif ($name === 'children' || $name === 'selector') {
-                        $out .= self::str(self::lookup($name, $stack));
+                        // raw by design, so only ever read from the root context (never from a repeater item)
+                        $out .= self::str(self::lookup($name, [end($stack)]));
                     } else {
                         $out .= e(self::str(self::lookup($name, $stack)));
                     }

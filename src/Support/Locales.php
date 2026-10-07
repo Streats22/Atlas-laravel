@@ -43,7 +43,7 @@ class Locales
     }
 
     /** Public URL of a page in a given locale. */
-    public static function url(Page $page, ?string $locale = null): string
+    public static function url(Page $page, ?string $locale = null, bool $explicit = false): string
     {
         $locale ??= self::current();
         $prefix = trim((string) config('atlas.frontend.prefix'), '/');
@@ -55,7 +55,8 @@ class Locales
 
         $url = url(trim(implode('/', array_filter([...$segments, $page->slug])), '/'));
 
-        if (! self::prefixed() && $locale !== self::default()) {
+        // Switcher links must say ?lang= even for the default locale, or the remembered locale would win.
+        if (! self::prefixed() && ($explicit || $locale !== self::default())) {
             $url .= '?lang=' . $locale;
         }
 
@@ -69,7 +70,7 @@ class Locales
 
         return collect(self::available())->map(function ($name, $code) use ($page) {
             if ($page instanceof Page) {
-                $url = self::url($page, $code);
+                $url = self::url($page, $code, explicit: true);
             } else {
                 $url = request()->fullUrlWithQuery(['lang' => $code]);
             }

@@ -4,6 +4,16 @@ All notable changes to Atlas are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Fixed (from an independent code review)
+- Builder blocks no longer render raw HTML/JS when `custom_code` is disabled.
+- CSS `url()` injection and unwhitelisted style values (`width`, colours, backgrounds) in block views are neutralised (`cssUrl`, `cssColor`, `cssLength`).
+- Bundles: media paths are relative to the uploads directory and traversal-safe; imports validate slugs, meta and dates like the editor does; temp dirs are cleaned up.
+- The language switcher can switch back to the default language; `atlas.theme.default` is honoured.
+- Generated packages discover nested blocks and skip abstract ones, rewrite all block-namespace references, and always emit valid `composer.json`.
+- Template engine ignores stray closing tags and reads `{{selector}}`/`{{children}}` from the root context only.
+- Page creation/duplication never takes the reserved `atlas` slug.
+- Atlas no longer replaces an application's own routes (`/`, `/sitemap.xml`, `/{slug}`): public routes are registered at routing time with collision-free parameter names.
+
 ### Added
 - Visual drag & drop editor with live canvas, layers, inspector, undo/redo and responsive preview.
 - 28 built-in blocks: layout, content, portfolio, animated and utility blocks.

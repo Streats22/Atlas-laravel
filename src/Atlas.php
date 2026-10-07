@@ -58,6 +58,16 @@ class Atlas
         return $this;
     }
 
+    /** Register every concrete Block found in $path (PSR-4 under $namespace). */
+    public function discover(string $path, string $namespace): static
+    {
+        foreach (app(\Atlas\Blocks\BlockDiscoverer::class)->find($path, $namespace) as $class) {
+            $this->block($class);
+        }
+
+        return $this;
+    }
+
     /** Register a block backed only by a Blade view. */
     public function viewBlock(
         string $type,

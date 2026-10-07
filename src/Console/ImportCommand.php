@@ -27,7 +27,11 @@ class ImportCommand extends Command
             return self::FAILURE;
         }
 
-        $result = $importer->import($bundle, $media, (bool) $this->option('force'));
+        try {
+            $result = $importer->import($bundle, $media, (bool) $this->option('force'));
+        } finally {
+            $archive->cleanup();
+        }
 
         $this->table(['', 'Created', 'Updated', 'Skipped'], [
             ['Pages', $result->pagesCreated, $result->pagesUpdated, count($result->pagesSkipped)],

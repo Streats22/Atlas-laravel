@@ -51,7 +51,7 @@ final class MediaUrls
         return $this->swap($data, self::PLACEHOLDER, $this->prefix());
     }
 
-    /** @return list<string> Disk-relative paths (e.g. atlas/a.jpg) of uploads referenced in $data. */
+    /** @return list<string> Upload file names relative to the uploads directory (e.g. "a.jpg", "2026/b.png"). */
     public function referenced(array $data): array
     {
         $found = [];
@@ -65,8 +65,8 @@ final class MediaUrls
                 $offset = 0;
                 while (($pos = strpos($value, $prefix, $offset)) !== false) {
                     $start = $pos + strlen($prefix);
-                    if (preg_match('/^[\w.\-\/]+/', substr($value, $start), $m)) {
-                        $found[$this->directory . '/' . $m[0]] = true;
+                    if (preg_match('/^[\w.\-\/]+/', substr($value, $start), $m) && self::isSafeName($m[0])) {
+                        $found[$m[0]] = true;
                     }
                     $offset = $start;
                 }
@@ -74,6 +74,21 @@ final class MediaUrls
         });
 
         return array_keys($found);
+    }
+
+    /** A relative upload name: no traversal, no absolute path, no hidden segments. */
+    public static function isSafeName(string $name): bool
+    {
+        return $name !== ''
+            && ! str_starts_with($name, '/')
+            && ! str_contains($name, '//')
+            && ! preg_match('#(^|/)\.{1,2}(/|$)#', $name);
+    }
+
+    /** Path of an upload name on the configured disk. */
+    public function path(string $name): string
+    {
+        return $this->directory . '/' . $name;
     }
 
     private function swap(array $data, string $from, string $to): array

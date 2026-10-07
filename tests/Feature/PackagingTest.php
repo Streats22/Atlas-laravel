@@ -62,7 +62,7 @@ class PackagingTest extends TestCase
         $archive->open($zip);
         $manifest = json_decode($archive->getFromName('bundle.json'), true);
         $this->assertSame('{{atlas:media}}/hero.jpg', $manifest['pages'][0]['content'][0]['props']['src']);
-        $this->assertSame(['atlas/hero.jpg'], $manifest['media']);
+        $this->assertSame(['hero.jpg'], $manifest['media']);
         $this->assertNotFalse($archive->locateName('media/hero.jpg'));
         $archive->close();
 

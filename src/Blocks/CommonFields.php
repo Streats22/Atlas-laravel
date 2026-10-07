@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Blocks;
 
+use Atlas\Support\Features;
+
 /** Properties every block gets in the inspector's "Advanced" section. */
 class CommonFields
 {
@@ -24,7 +26,7 @@ class CommonFields
             Field::text('css_class', 'CSS classes', ''),
         ];
 
-        if (config('atlas.custom_code')) {
+        if (Features::customCode()) {
             $fields[] = Field::text('html_id', 'HTML id', '');
             $fields[] = Field::code('custom_css', 'Custom CSS  ({{selector}} = this block)', '', 'css');
         }

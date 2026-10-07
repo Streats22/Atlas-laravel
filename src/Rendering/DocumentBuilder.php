@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Rendering;
 
 use Atlas\Atlas;
+use Atlas\Support\Features;
 use Atlas\Support\Locales;
 use Atlas\Support\Theme;
 use Atlas\Support\Url;
@@ -28,7 +29,7 @@ final class DocumentBuilder
     {
         $locale = Locales::current();
         $theme = Theme::fromMeta($page->meta);
-        $custom = (bool) config('atlas.custom_code');
+        $custom = Features::customCode();
         $title = $page->meta->title($locale, $page->title);
         $description = $page->meta->description($locale);
         $html = (string) $body;

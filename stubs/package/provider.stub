@@ -15,10 +15,8 @@ class {{ class }}ServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Developer blocks shipped with this package.
-        foreach (glob(__DIR__ . '/Blocks/*.php') ?: [] as $file) {
-            Atlas::block(__NAMESPACE__ . '\\Blocks\\' . basename($file, '.php'));
-        }
+        // Developer blocks shipped with this package (nested folders included, abstract classes skipped).
+        Atlas::discover(__DIR__ . '/Blocks', __NAMESPACE__ . '\\Blocks');
 
         // Block views live in resources/views/atlas/blocks (found as "atlas.blocks.*").
         if (is_dir(__DIR__ . '/../resources/views')) {

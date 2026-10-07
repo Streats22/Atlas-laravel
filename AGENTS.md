@@ -33,6 +33,7 @@ Always run `composer lint` and `vendor/bin/phpunit` before finishing. Both must 
 | `src/Rendering/` | `Renderer` (tree → HTML), `NodeWrapper`, `PropLocalizer`, `DocumentBuilder`, `AssetBag`, `PageData`, `RenderNode` |
 | `src/Support/` | `Tree` (sanitise), `Url` (safe links), `Theme` + `PageMeta` (value objects), `Locales`, `Template` (builder template language), `ViewHelpers` |
 | `src/Enums/` | `PageStatus`, `ThemeMode`, `Spacing` |
+| `src/Templates/` | `PageTemplate` (extend to add start-from templates), `NodeFactory`, `TemplateRegistry`; `Blank/Landing/PortfolioTemplate` |
 | `src/Packaging/` | `Bundle*`, `MediaUrls`, `PackageScaffolder`, `PackageSpec` behind `atlas:export/import/package` |
 | `src/Http/` | Thin controllers, `Requests/*` (validation), `Middleware/Authorize` |
 | `resources/views/blocks/*.blade.php` | One view per built-in block |
@@ -71,7 +72,8 @@ Request flow: editor → `PUT /atlas/api/pages/{page}` (`SavePageRequest`) → `
 
 * **A built-in block**: class in `src/Blocks/Builtin/` extending `BuiltinBlock` (type, label, icon, category, `fields()`, optional `data()`/`assets()`), view `resources/views/blocks/{type}.blade.php`, register in `AtlasServiceProvider::registerBlocks()`, CSS in `resources/dist/base.css` (use `--atlas-*` tokens; support light **and** dark), labels in `lang/nl/blocks.php`, field/option labels in `lang/nl/{fields,options}.php`, add to the README table.
 * **A field type**: `Field::*` builder, `FieldNormalizer` (builder), `fieldEl()` in `atlas.js`.
-* **An editor string**: add to `lang/en/ui.php` **and** `lang/nl/ui.php`; use `t('key')` in JS or `__('atlas::ui.key')` in PHP.
+* **An editor string**: add to `lang/en/ui.php` **and** `lang/nl/ui.php`; use `t('key')` in JS or `__('atlas::ui.key')` in PHP. `TranslationsTest` fails if a key used in code is missing or the two files drift.
+* **A page template**: extend `PageTemplate`, register in `AtlasServiceProvider::registerTemplates()` (or `Atlas::template()` for apps), add `template_{key}` / `template_{key}_desc` to both `lang/*/ui.php`.
 * **A config option**: `config/atlas.php` with a comment, README config table, CHANGELOG.
 
 ## Spacing & design conventions

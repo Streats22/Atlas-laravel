@@ -32,7 +32,7 @@ class PortfolioGrid extends BuiltinBlock
                 ['image' => '', 'title' => 'Mobile app', 'category' => 'App', 'description' => 'Concept and UI for a fitness app.', 'url' => '', 'tags' => 'UI, Prototype'],
             ], 'title'),
             Field::select('columns', ['2' => '2 columns', '3' => '3 columns', '4' => '4 columns'], 'Columns', '3'),
-            Field::number('gap', 'Gap (px)', 20),
+            Field::number('gap', 'Gap (px)', 28),
             Field::select('ratio', ['1/1' => 'Square', '4/3' => '4:3', '3/2' => '3:2', '16/9' => '16:9', '3/4' => 'Portrait'], 'Image ratio', '4/3'),
             Field::select('style', ['overlay' => 'Overlay on hover', 'caption' => 'Caption below', 'minimal' => 'Minimal'], 'Style', 'overlay'),
             Field::select('hover', ['zoom' => 'Zoom', 'lift' => 'Lift', 'none' => 'None'], 'Hover effect', 'zoom'),

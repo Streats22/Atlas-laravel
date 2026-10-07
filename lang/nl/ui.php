@@ -42,4 +42,11 @@ return [
     'unsaved_confirm' => 'Je hebt niet-opgeslagen wijzigingen. Toch verlaten?', 'canvas_failed' => 'Canvas renderen mislukt', 'save_failed' => 'Opslaan mislukt', 'upload_failed' => 'Uploaden mislukt',
     'pages' => 'Pagina’s', 'new_page' => 'Titel van nieuwe pagina…', 'create_page' => 'Pagina maken', 'title' => 'Titel', 'url' => 'URL', 'status' => 'Status', 'updated' => 'Bijgewerkt',
     'edit' => 'Bewerken', 'delete_confirm' => 'Deze pagina verwijderen?', 'no_pages' => 'Nog geen pagina’s. Maak hierboven je eerste aan.',
+
+    // Added later
+    'search_pages' => 'Pagina’s zoeken…', 'restore_draft' => 'Er is een niet-opgeslagen concept van :time gevonden.', 'restore' => 'Herstellen', 'discard' => 'Weggooien',
+    'copied' => 'Gekopieerd', 'pasted' => 'Geplakt',
+    'template' => 'Begin met', 'template_blank' => 'Lege pagina', 'template_blank_desc' => 'Een leeg canvas',
+    'template_landing' => 'Landingspagina', 'template_landing_desc' => 'Hero, drie kenmerken en een call-to-action',
+    'template_portfolio' => 'Portfolio', 'template_portfolio_desc' => 'Hero, werkgrid, showcase, vaardigheden, referenties en contact',
 ];

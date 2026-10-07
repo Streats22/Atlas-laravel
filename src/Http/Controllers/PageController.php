@@ -4,25 +4,31 @@ declare(strict_types=1);
 
 namespace Atlas\Http\Controllers;
 
+use Atlas\Atlas;
 use Atlas\Blocks\CommonFields;
 use Atlas\Enums\PageStatus;
 use Atlas\Enums\Spacing;
-use Atlas\Facades\Atlas;
 use Atlas\Http\Requests\SavePageRequest;
 use Atlas\Models\CustomBlock;
 use Atlas\Models\Page;
 use Atlas\Support\Locales;
 use Atlas\Support\Theme;
 use Atlas\Support\Tree;
+use Atlas\Templates\NodeFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PageController
 {
+    public function __construct(private readonly Atlas $atlas)
+    {
+    }
+
     private const PER_PAGE = 20;
 
     public function index(Request $request): View
@@ -39,7 +45,7 @@ class PageController
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
-        return view('atlas::pages', ['pages' => $pages, 'term' => $term]);
+        return view('atlas::pages', ['pages' => $pages, 'term' => $term, 'templates' => $this->atlas->templates()->all()]);
     }
 
     public function duplicate(Page $page): RedirectResponse
@@ -55,13 +61,18 @@ class PageController
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate(['title' => ['required', 'string', 'max:255']]);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'template' => ['nullable', Rule::in($this->atlas->templates()->keys())],
+        ]);
+        $template = $this->atlas->templates()->get($data['template'] ?? 'blank');
 
         $page = Page::create([
             'title' => $data['title'],
             'slug' => $this->uniqueSlug(Str::slug($data['title']) ?: 'page'),
             'status' => PageStatus::Draft,
-            'content' => [],
+            'content' => $template?->tree(new NodeFactory($this->atlas)) ?? [],
+            'meta' => $template?->meta() ?? [],
         ]);
 
         return redirect()->route('atlas.pages.edit', $page);
@@ -131,7 +142,7 @@ class PageController
                 'head' => $page->head,
                 'meta' => (object) ($page->meta ?? []),
             ],
-            'blocks' => Atlas::blocks()->definitions(),
+            'blocks' => $this->atlas->blocks()->definitions(),
             'common' => CommonFields::definitions(),
             'customBlocks' => $custom ? CustomBlock::orderBy('label')->get()->map->toBuilder()->all() : [],
             'customCode' => $custom,

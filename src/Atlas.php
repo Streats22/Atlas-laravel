@@ -9,6 +9,8 @@ use Atlas\Blocks\BlockRegistry;
 use Atlas\Blocks\ViewBlock;
 use Atlas\Models\Page;
 use Atlas\Rendering\Renderer;
+use Atlas\Templates\PageTemplate;
+use Atlas\Templates\TemplateRegistry;
 use Closure;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\HtmlString;
@@ -21,13 +23,26 @@ class Atlas
 
     protected ?Renderer $renderer = null;
 
-    public function __construct(protected BlockRegistry $registry)
+    public function __construct(protected BlockRegistry $registry, protected TemplateRegistry $templates = new TemplateRegistry())
     {
     }
 
     public function blocks(): BlockRegistry
     {
         return $this->registry;
+    }
+
+    public function templates(): TemplateRegistry
+    {
+        return $this->templates;
+    }
+
+    /** Register a page template shown when creating a page. */
+    public function template(PageTemplate|string $template): static
+    {
+        $this->templates->register($template);
+
+        return $this;
     }
 
     public function renderer(): Renderer

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Atlas\Console;
 
 use Atlas\Atlas;
+use Atlas\Enums\PageStatus;
 use Atlas\Models\Page;
+use Atlas\Templates\NodeFactory;
+use Atlas\Templates\PortfolioTemplate;
 use Illuminate\Console\Command;
 
 class DemoCommand extends Command
@@ -14,130 +17,25 @@ class DemoCommand extends Command
 
     protected $description = 'Create a sample portfolio page that shows off the built-in blocks';
 
-    protected int $n = 0;
-
-    protected Atlas $atlas;
-
-    /** Build a node from a block's defaults, overriding props. */
-    /** URL of a bundled sample image (1–8). */
-    protected function img(int $n): string
-    {
-        return route('atlas.asset.demo', ['file' => "{$n}.jpg"], false);
-    }
-
-    protected function n(string $type, array $props = [], array $children = []): array
-    {
-        $tpl = $this->atlas->blocks()->get($type)->toDefinition()['template'];
-
-        return [
-            'id' => 'd' . str_pad((string) ++$this->n, 3, '0', STR_PAD_LEFT),
-            'type' => $type,
-            'props' => array_merge((array) $tpl['props'], $props),
-            'children' => $children ?: array_map(fn ($c) => ['id' => 'd' . str_pad((string) ++$this->n, 3, '0', STR_PAD_LEFT), 'type' => $c['type'], 'props' => array_merge((array) $this->atlas->blocks()->get($c['type'])->toDefinition()['template']['props'], (array) ($c['props'] ?? [])), 'children' => []], $tpl['children']),
-        ];
-    }
-
     public function handle(Atlas $atlas): int
     {
-        $this->atlas = $atlas;
         $slug = (string) $this->option('slug');
+        $existing = Page::where('slug', $slug)->first();
 
-        if ($existing = Page::where('slug', $slug)->first()) {
-            if (! $this->option('force')) {
-                $this->error("A page with slug “{$slug}” already exists. Use --force to replace it.");
+        if ($existing && ! $this->option('force')) {
+            $this->error("A page with slug “{$slug}” already exists. Use --force to replace it.");
 
-                return self::FAILURE;
-            }
-            $existing->delete();
+            return self::FAILURE;
         }
+        $existing?->delete();
 
-        $section = fn (array $props, array $kids) => $this->n('section', $props, $kids);
-
-        $work = [
-            ['image' => $this->img(1), 'title' => 'Aurora Brand System', 'category' => 'Branding', 'description' => 'Identity, motion and a design system for a climate startup.', 'tags' => 'Branding, Motion', 'url' => ''],
-            ['image' => $this->img(2), 'title' => 'Northwind Storefront', 'category' => 'Web', 'description' => 'A headless commerce site with sub-second page loads.', 'tags' => 'Laravel, UX', 'url' => ''],
-            ['image' => $this->img(3), 'title' => 'Pulse Fitness App', 'category' => 'App', 'description' => 'Concept to prototype for a coaching app.', 'tags' => 'UI, Prototype', 'url' => ''],
-            ['image' => $this->img(4), 'title' => 'Atlas Annual Report', 'category' => 'Print', 'description' => 'A 120-page editorial design.', 'tags' => 'Editorial', 'url' => ''],
-            ['image' => $this->img(5), 'title' => 'Lumen Dashboard', 'category' => 'Web', 'description' => 'Analytics for 40k daily users.', 'tags' => 'Dashboard, Charts', 'url' => ''],
-            ['image' => $this->img(6), 'title' => 'Mono Packaging', 'category' => 'Branding', 'description' => 'Sustainable packaging range.', 'tags' => 'Print, 3D', 'url' => ''],
-        ];
-
-        $tree = [
-            $this->n('hero', [
-                'eyebrow' => 'Portfolio 2026', 'eyebrow@nl' => 'Portfolio 2026',
-                'title' => 'Designer & developer who ships', 'title@nl' => 'Ontwerper & ontwikkelaar die oplevert',
-                'text' => 'I help ambitious teams turn ideas into fast, beautiful products.', 'text@nl' => 'Ik help ambitieuze teams om ideeën om te zetten in snelle, mooie producten.',
-                'primary_label' => 'See my work', 'primary_label@nl' => 'Bekijk mijn werk', 'primary_url' => '#work',
-                'secondary_label' => 'Get in touch', 'secondary_label@nl' => 'Neem contact op', 'secondary_url' => '#contact',
-            ]),
-            $section(['max_width' => 'normal'], [
-                $this->n('typewriter', ['prefix' => 'I design', 'prefix@nl' => 'Ik ontwerp', 'words' => "brands\nwebsites\napps\nexperiences", 'words@nl' => "merken\nwebsites\napps\nbelevingen", 'suffix' => '.', 'anim' => 'fade-up']),
-            ]),
-            $section(['tone' => 'surface'], [
-                $this->n('counter', ['anim' => 'fade-up']),
-            ]),
-            $section([], [
-                $this->n('heading', ['eyebrow' => 'Selected work', 'eyebrow@nl' => 'Uitgelicht werk', 'text' => 'Projects I am proud of', 'text@nl' => 'Projecten waar ik trots op ben', 'level' => 'h2', 'align' => 'center', 'anim' => 'fade-up', 'html_id' => 'work']),
-                $this->n('portfolio-grid', ['items' => $work, 'all_label' => 'All', 'all_label@nl' => 'Alles', 'anim' => 'fade-up', 'style' => 'overlay']),
-            ]),
-            $section(['tone' => 'surface'], [
-                $this->n('project-showcase', [
-                    'image' => $this->img(1), 'title' => 'Aurora Brand System', 'summary' => 'A complete identity for a climate-tech startup.', 'summary@nl' => 'Een complete identiteit voor een climate-tech startup.',
-                    'description' => "The brief: **look credible to investors and approachable to families**.\n\n- Logo, colour & type\n- Motion principles\n- A coded component library",
-                    'image_side' => 'right', 'anim' => 'fade-up',
-                ]),
-            ]),
-            $section([], [
-                $this->n('heading', ['eyebrow' => 'Gallery', 'eyebrow@nl' => 'Galerij', 'text' => 'Details & moments', 'text@nl' => 'Details & momenten', 'align' => 'center', 'anim' => 'fade-up']),
-                $this->n('gallery', ['columns' => '4', 'ratio' => '1/1', 'items' => [
-                    ['image' => $this->img(5), 'alt' => 'Study one', 'caption' => ''],
-                    ['image' => $this->img(7), 'alt' => 'Study two', 'caption' => ''],
-                    ['image' => $this->img(8), 'alt' => 'Study three', 'caption' => ''],
-                    ['image' => $this->img(3), 'alt' => 'Study four', 'caption' => ''],
-                ]]),
-            ]),
-            $section([], [
-                $this->n('columns', ['layout' => '1fr 1fr', 'gap' => 48], [
-                    $section(['padding_y' => 0, 'max_width' => 'full'], [
-                        $this->n('heading', ['text' => 'Skills', 'text@nl' => 'Vaardigheden', 'level' => 'h3']),
-                        $this->n('skills', ['items' => [['name' => 'Brand & identity', 'level' => 92], ['name' => 'Laravel & PHP', 'level' => 88], ['name' => 'Motion design', 'level' => 74], ['name' => 'Accessibility', 'level' => 81]]]),
-                    ]),
-                    $section(['padding_y' => 0, 'max_width' => 'full'], [
-                        $this->n('heading', ['text' => 'Experience', 'text@nl' => 'Ervaring', 'level' => 'h3']),
-                        $this->n('timeline'),
-                    ]),
-                ]),
-            ]),
-            $section(['tone' => 'inverted'], [
-                $this->n('marquee', ['items' => [['text' => 'Branding'], ['text' => 'Web'], ['text' => 'Apps'], ['text' => 'Motion'], ['text' => 'Print']], 'size' => 'xl', 'speed' => 28]),
-            ]),
-            $section([], [
-                $this->n('heading', ['text' => 'Kind words', 'text@nl' => 'Lovende woorden', 'align' => 'center']),
-                $this->n('testimonials', ['layout' => 'carousel']),
-            ]),
-            $section(['tone' => 'surface', 'max_width' => 'narrow'], [
-                $this->n('heading', ['text' => 'Questions', 'text@nl' => 'Vragen', 'align' => 'center']),
-                $this->n('accordion', ['items' => [
-                    ['title' => 'Are you available for new projects?', 'title@nl' => 'Ben je beschikbaar voor nieuwe projecten?', 'text' => 'Yes — from next month.', 'text@nl' => 'Ja — vanaf volgende maand.'],
-                    ['title' => 'How do we start?', 'title@nl' => 'Hoe beginnen we?', 'text' => 'A 30 minute call to understand your goals.', 'text@nl' => 'Een gesprek van 30 minuten om je doelen te begrijpen.'],
-                ]]),
-            ]),
-            $section(['tone' => 'accent', 'html_id' => 'contact'], [
-                $this->n('heading', ['text' => "Let's build something great", 'text@nl' => 'Laten we iets moois bouwen', 'align' => 'center', 'level' => 'h2']),
-                $this->n('button', ['label' => 'hello@example.com', 'url' => 'mailto:hello@example.com', 'align' => 'center', 'size' => 'lg', 'anim' => 'zoom-in']),
-                $this->n('social-links', ['align' => 'center']),
-            ]),
-            $section(['padding_y' => 24], [
-                $this->n('columns', ['layout' => '1fr 1fr', 'align' => 'center'], [
-                    $section(['padding_y' => 0, 'max_width' => 'full'], [$this->n('text', ['text' => '© 2026 Your Name', 'size' => 'sm'])]),
-                    $section(['padding_y' => 0, 'max_width' => 'full'], [$this->n('language-switcher'), $this->n('theme-toggle')]),
-                ]),
-            ]),
-        ];
-
+        $template = new PortfolioTemplate();
         $page = Page::create([
-            'title' => 'Portfolio demo', 'slug' => $slug, 'status' => 'published', 'content' => $tree,
-            'meta' => ['description' => 'A sample portfolio built with Atlas.', 'theme' => 'auto', 'theme_toggle' => true],
+            'title' => 'Portfolio demo',
+            'slug' => $slug,
+            'status' => PageStatus::Published,
+            'content' => $template->tree(new NodeFactory($atlas)),
+            'meta' => $template->meta(),
         ]);
 
         $this->info('Demo page created: ' . $page->url());

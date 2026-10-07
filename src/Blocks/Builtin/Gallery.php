@@ -29,7 +29,7 @@ class Gallery extends BuiltinBlock
                 ['image' => '', 'alt' => 'Image three', 'caption' => ''],
             ], 'alt'),
             Field::select('columns', ['2' => '2', '3' => '3', '4' => '4', '5' => '5'], 'Columns', '3'),
-            Field::number('gap', 'Gap (px)', 12),
+            Field::number('gap', 'Gap (px)', 16),
             Field::select('ratio', ['1/1' => 'Square', '4/3' => '4:3', '16/9' => '16:9', 'auto' => 'Original'], 'Ratio', '1/1'),
             Field::checkbox('lightbox', 'Lightbox', true),
         ];

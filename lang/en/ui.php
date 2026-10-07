@@ -47,4 +47,11 @@ return [
     'unsaved_confirm' => 'You have unsaved changes. Leave anyway?', 'canvas_failed' => 'Canvas render failed', 'save_failed' => 'Save failed', 'upload_failed' => 'Upload failed',
     'pages' => 'Pages', 'new_page' => 'New page title…', 'create_page' => 'Create page', 'title' => 'Title', 'url' => 'URL', 'status' => 'Status', 'updated' => 'Updated',
     'edit' => 'Edit', 'delete_confirm' => 'Delete this page?', 'no_pages' => 'No pages yet. Create your first one above.',
+
+    // Added later
+    'search_pages' => 'Search pages…', 'restore_draft' => 'An unsaved draft from :time was found.', 'restore' => 'Restore', 'discard' => 'Discard',
+    'copied' => 'Copied', 'pasted' => 'Pasted',
+    'template' => 'Start from', 'template_blank' => 'Blank page', 'template_blank_desc' => 'An empty canvas',
+    'template_landing' => 'Landing page', 'template_landing_desc' => 'Hero, three features and a call to action',
+    'template_portfolio' => 'Portfolio', 'template_portfolio_desc' => 'Hero, work grid, showcase, skills, testimonials and contact',
 ];

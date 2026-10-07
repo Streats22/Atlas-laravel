@@ -17,4 +17,6 @@ All notable changes to Atlas are documented here. The format follows [Keep a Cha
 - AGENTS.md / CLAUDE.md, PSR-12 (Pint) + strict types, CI workflow, SQL-injection safety tests.
 - Editor: autosave recovery, copy/cut/paste, Layers drag & drop; page list search, pagination and duplicate.
 - `/sitemap.xml` with hreflang alternates and `<link rel="canonical">`.
+- Page templates (Blank, Landing, Portfolio) with an extensible `PageTemplate` API; `atlas:demo` now uses the Portfolio template.
+- Translation-key guard test.
 - Spacing system (`compact` / `comfortable` / `spacious`) with page gutters and block rhythm.

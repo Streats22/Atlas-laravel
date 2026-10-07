@@ -35,6 +35,8 @@ A visual **drag & drop page builder for Laravel 12 and 13** — with light/dark 
 <img src="docs/screenshots/editor-translation.png" alt="Editing the Dutch version of a page">
 <img src="docs/screenshots/editor-page-settings.png" alt="Page settings: theme, accent, fonts, spacing">
 <img src="docs/screenshots/block-builder.png" alt="Custom block builder">
+<img src="docs/screenshots/pages-list.png" alt="Page list with search, templates and duplicate">
+<img src="docs/screenshots/template-landing.png" alt="A page created from the Landing template">
 
 **Dark / light mode** &nbsp; <img src="docs/gifs/dark-mode.gif" alt="Toggling dark mode" width="700">
 
@@ -287,6 +289,34 @@ Atlas::viewBlock('hero-banner', 'blocks.hero', 'Hero banner', [Field::text('titl
 ```
 
 Block labels, field labels and options are translatable through `lang/vendor/atlas/{locale}/blocks.php`.
+
+## Page templates
+
+Creating a page? Pick what to **start from** — *Blank*, *Landing page* (hero, three features, call to action) or *Portfolio* (hero, work grid, showcase, skills, testimonials, contact). Add your own:
+
+```php
+use Atlas\Facades\Atlas;
+use Atlas\Templates\{NodeFactory, PageTemplate};
+
+class PricingTemplate extends PageTemplate
+{
+    public function key(): string { return 'pricing'; }
+
+    public function tree(NodeFactory $n): array
+    {
+        return [
+            $n->make('heading', ['text' => 'Simple pricing', 'align' => 'center']),
+            $n->columns([[$n->make('icon-box', ['title' => 'Free'])], [$n->make('icon-box', ['title' => 'Pro'])]]),
+        ];
+    }
+
+    public function meta(): array { return ['theme' => 'dark']; }   // optional page settings
+}
+
+Atlas::template(PricingTemplate::class);   // AppServiceProvider::boot()
+```
+
+`NodeFactory::make($type, $props)` builds a block with its registered defaults; `section()`, `columns()` and `image($n)` (bundled sample artwork) are shortcuts. Template names and descriptions are translatable (`atlas::ui.template_{key}`).
 
 ## Ship your site as a package
 

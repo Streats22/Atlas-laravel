@@ -14,6 +14,11 @@
         <form method="post" action="{{ route('atlas.pages.store') }}" class="atlas-admin__new">
             @csrf
             <input name="title" placeholder="{{ __('atlas::ui.new_page') }}" required maxlength="255">
+            @if(count($templates) > 1)
+                <select name="template" title="{{ __('atlas::ui.template') }}">
+                    @foreach($templates as $key => $template)<option value="{{ $key }}" title="{{ $template->description() }}">{{ $template->label() }}</option>@endforeach
+                </select>
+            @endif
             <button class="atlas-btn atlas-btn--primary">{{ __('atlas::ui.create_page') }}</button>
         </form>
     </header>

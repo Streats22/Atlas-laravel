@@ -21,6 +21,10 @@ use Atlas\Http\Middleware\Authorize;
 use Atlas\Models\CustomBlock;
 use Atlas\Packaging\MediaUrls;
 use Atlas\Support\Locales;
+use Atlas\Templates\BlankTemplate;
+use Atlas\Templates\LandingTemplate;
+use Atlas\Templates\PortfolioTemplate;
+use Atlas\Templates\TemplateRegistry;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
@@ -35,7 +39,8 @@ class AtlasServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../config/atlas.php', 'atlas');
 
         $this->app->singleton(BlockRegistry::class);
-        $this->app->singleton(Atlas::class, fn ($app) => new Atlas($app->make(BlockRegistry::class)));
+        $this->app->singleton(TemplateRegistry::class);
+        $this->app->singleton(Atlas::class, fn ($app) => new Atlas($app->make(BlockRegistry::class), $app->make(TemplateRegistry::class)));
         $this->app->alias(Atlas::class, 'atlas');
         $this->app->singleton(MediaUrls::class, fn () => MediaUrls::fromConfig());
     }
@@ -59,6 +64,7 @@ class AtlasServiceProvider extends ServiceProvider
         }
 
         $this->registerBlocks();
+        $this->registerTemplates();
         $this->registerRoutes();
 
         if ($this->app->runningInConsole()) {
@@ -68,6 +74,15 @@ class AtlasServiceProvider extends ServiceProvider
             $this->publishes([__DIR__ . '/../resources/views' => resource_path('views/vendor/atlas')], 'atlas-views');
             $this->publishes([__DIR__ . '/../lang' => $this->app->langPath('vendor/atlas')], 'atlas-lang');
             $this->publishes([__DIR__ . '/../database/migrations' => database_path('migrations')], 'atlas-migrations');
+        }
+    }
+
+    protected function registerTemplates(): void
+    {
+        $templates = $this->app->make(TemplateRegistry::class);
+
+        foreach ([BlankTemplate::class, LandingTemplate::class, PortfolioTemplate::class] as $template) {
+            $templates->register($template);
         }
     }
 

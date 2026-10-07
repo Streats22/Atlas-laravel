@@ -29,6 +29,9 @@ vendor/bin/testbench atlas:demo --force
 
 ## Gotchas
 
+* **Route URIs collide silently**: `RouteCollection` keys by `domain.uri`, so adding `GET /` again replaces an existing route regardless of order. Check `appDefines()` before registering fixed URIs and keep Atlas route parameter names unique.
+* **Composer path repositories key on the git commit** — commit before `composer update streats22/atlas` in a test app, or the old code is re-used.
+* Prefer `ss -ltnp | grep :PORT` to stop dev servers; `pkill -f` patterns match your own shell.
 * `app()->setLocale()` overwrites `config('app.locale')`, so the default content locale is pinned in `AtlasServiceProvider::boot()` (`atlas.default_locale`). Always use `Locales::default()`, never `config('app.locale')`.
 * Laravel passes route parameters to controller methods **positionally** — give locale routes their own methods (`homeLocale`, `showLocale`).
 * `BlockRegistry` loads database blocks lazily on first use; call `all()/has()/get()/definitions()` (they boot it) rather than reading internals.

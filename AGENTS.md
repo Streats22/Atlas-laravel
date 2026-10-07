@@ -56,10 +56,11 @@ Request flow: editor → `PUT /atlas/api/pages/{page}` (`SavePageRequest`) → `
 
 1. **SQL injection safety** — use Eloquent/query-builder with bound parameters only. **Never** use `DB::raw`, `whereRaw`, `selectRaw`, `orderByRaw`, `DB::statement` etc. with user input; `SecurityTest` greps `src/` and fails on raw SQL APIs. Models use `$fillable`, never `$guarded = []`.
 2. **Output escaping** — Blade `{{ }}` for all props. `{!! !!}` only for already-sanitised HTML (`$children`, Markdown output with `html_input => strip`, trusted code blocks).
-3. **Whitelist values** that end up in class names/styles/attributes with `$pick()`/`$int()`/`$aspect()`; run URLs through `$safe()` / `Url::safe()`.
-4. **Raw code is a feature, not a bug** (Custom Code block, page JS/CSS, `{{{ }}}` in builder templates) — but only behind the `useAtlas` gate and `atlas.custom_code`. `allow_blade_code` stays **off** by default.
+3. **Whitelist values** that end up in class names/styles/attributes with `$pick()`/`$int()`/`$aspect()`/`$cssColor()`/`$cssLength()`; run links through `$safe()` and anything inside CSS `url('…')` through `$cssUrl()`. Never echo a raw prop into a `style=""` attribute.
+4. **Raw code is a feature, not a bug** — ask `Features::customCode()` / `Features::bladeCode()` (never `config()` directly), and make every code path honour it, including database-backed blocks — (Custom Code block, page JS/CSS, `{{{ }}}` in builder templates) — but only behind the `useAtlas` gate and `atlas.custom_code`. `allow_blade_code` stays **off** by default.
 5. Editor routes always pass through `Authorize` (gate `useAtlas`, denied outside `local` by default).
-6. Zip/bundle imports must stay path-traversal safe (see `BundleArchive`).
+6. Zip/bundle imports must stay path-traversal safe (see `BundleArchive`, `MediaUrls::isSafeName`) and must apply the same validation as the editor (`SlugPolicy`, `PageMeta::sanitize`).
+7. Never register a route URI the host app might own: Laravel keys routes by URI, so a second `GET /` silently **replaces** the app's. Atlas registers public routes at routing time, skips URIs the app defines, and uses unique parameter names (`atlasSlug`, `atlasLocale`).
 
 ## Testing rules
 

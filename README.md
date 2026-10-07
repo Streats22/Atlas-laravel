@@ -12,6 +12,8 @@ A visual **drag & drop page builder for Laravel 12 and 13** — with light/dark 
 * **No build step** – the editor and the page runtime are dependency-free JavaScript shipped with the package.
 * **Secure by default** – the editor is closed outside `local` until you decide who may use it.
 
+**Contents** — [Install](#install) · [Editor](#the-editor) · [Blocks](#built-in-blocks) · [Spacing](#spacing) · [Dark & light mode](#light--dark-mode) · [Translations](#translations) · [Animations](#animations) · [Portfolio](#portfolio-blocks) · [Custom code](#custom-code) · [Custom blocks](#creating-custom-blocks) · [Templates](#page-templates) · [Ship as a package](#ship-your-site-as-a-package) · [Config](#configuration-reference) · [Commands](#artisan-commands) · [Security](#security-notes)
+
 <p align="center">
   <img src="docs/gifs/drag-and-drop.gif" alt="Building a page by dragging blocks" width="860">
 </p>
@@ -57,6 +59,18 @@ composer require streats22/atlas
 php artisan atlas:install      # publishes config/atlas.php and runs the migrations
 php artisan atlas:demo         # optional: a complete sample portfolio page at /demo
 ```
+
+### Quick start in a fresh Laravel app
+
+```bash
+laravel new my-site && cd my-site
+composer require streats22/atlas
+php artisan atlas:install        # config, migrations, storage link
+php artisan atlas:demo           # optional sample portfolio at /demo
+php artisan serve                # then open http://localhost:8000/atlas
+```
+
+In production, define who may edit (see below) and, optionally, set your locales: `ATLAS_LOCALES="en:English,nl:Nederlands"`.
 
 Open **`/atlas`**, create a page and start dragging. Published pages are served at `/{slug}`; the page with slug `home` is also served at `/` when your app has no `/` route.
 

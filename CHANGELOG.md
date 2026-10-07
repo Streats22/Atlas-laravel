@@ -15,4 +15,6 @@ All notable changes to Atlas are documented here. The format follows [Keep a Cha
 - `atlas:export` / `atlas:import` bundles (zip with media, portable image URLs) and `atlas:package`, a smart packager that scaffolds a publishable Composer package from a site.
 - Bundled sample artwork and a richer `atlas:demo` page.
 - AGENTS.md / CLAUDE.md, PSR-12 (Pint) + strict types, CI workflow, SQL-injection safety tests.
+- Editor: autosave recovery, copy/cut/paste, Layers drag & drop; page list search, pagination and duplicate.
+- `/sitemap.xml` with hreflang alternates and `<link rel="canonical">`.
 - Spacing system (`compact` / `comfortable` / `spacious`) with page gutters and block rhythm.

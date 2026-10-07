@@ -17,6 +17,9 @@
             <button class="atlas-btn atlas-btn--primary">{{ __('atlas::ui.create_page') }}</button>
         </form>
     </header>
+    <form method="get" class="atlas-admin__search">
+        <input type="search" name="q" value="{{ $term }}" placeholder="{{ __('atlas::ui.search_pages') }}">
+    </form>
     @error('title')<p class="atlas-error-text">{{ $message }}</p>@enderror
 
     <table class="atlas-table">
@@ -31,6 +34,10 @@
                 <td class="atlas-actions">
                     <a class="atlas-btn" href="{{ route('atlas.pages.edit', $page) }}">{{ __('atlas::ui.edit') }}</a>
                     <a class="atlas-btn" href="{{ route('atlas.pages.preview', $page) }}" target="_blank">{{ __('atlas::ui.preview') }}</a>
+                    <form method="post" action="{{ route('atlas.pages.duplicate', $page) }}">
+                        @csrf
+                        <button class="atlas-btn">{{ __('atlas::ui.duplicate') }}</button>
+                    </form>
                     <form method="post" action="{{ route('atlas.pages.destroy', $page) }}" onsubmit="return confirm(@js(__('atlas::ui.delete_confirm')))">
                         @csrf @method('DELETE')
                         <button class="atlas-btn atlas-btn--danger">{{ __('atlas::ui.delete') }}</button>
@@ -42,6 +49,13 @@
         @endforelse
         </tbody>
     </table>
+    @if($pages->hasPages())
+        <nav class="atlas-pager">
+            @if($pages->onFirstPage())<span class="atlas-btn" disabled>←</span>@else<a class="atlas-btn" href="{{ $pages->previousPageUrl() }}">←</a>@endif
+            <span>{{ $pages->currentPage() }} / {{ $pages->lastPage() }}</span>
+            @if($pages->hasMorePages())<a class="atlas-btn" href="{{ $pages->nextPageUrl() }}">→</a>@else<span class="atlas-btn" disabled>→</span>@endif
+        </nav>
+    @endif
 </main>
 </body>
 </html>

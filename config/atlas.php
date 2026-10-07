@@ -30,6 +30,7 @@ return [
         'middleware' => ['web'],
         'home' => 'home',
         'locale_prefix' => false,
+        'sitemap' => true,   // serves /sitemap.xml (your own route of the same name wins)
     ],
 
     /*

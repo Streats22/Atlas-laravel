@@ -85,7 +85,9 @@ Everyone with editor access can write raw HTML/JS — treat it as a developer-le
 | **Inspector** | Fields for the selected block, plus *Animation*, *Spacing & visibility* and *Code & identity* sections. |
 | **Top bar** | Title, slug, status, **content language**, device sizes, **canvas light/dark preview** `◐`, **editor light/dark** `☾`, undo/redo, Preview, Save. |
 
-Shortcuts: `Ctrl/⌘+S` save · `Ctrl/⌘+Z` undo · `Ctrl/⌘+Shift+Z` redo · `Ctrl/⌘+D` duplicate · `Del` delete · `Esc` deselect / cancel drag.
+Shortcuts: `Ctrl/⌘+S` save · `Ctrl/⌘+Z` undo · `Ctrl/⌘+Shift+Z` redo · `Ctrl/⌘+D` duplicate · `Ctrl/⌘+C / X / V` copy / cut / paste blocks (also between pages) · `Del` delete · `Esc` deselect / cancel drag.
+
+Also built in: **autosave recovery** (an unsaved draft is kept in the browser and offered back after a crash or accidental close), **drag & drop reordering in the Layers panel**, and on the page list **search, pagination and Duplicate**. `/sitemap.xml` (with `hreflang` alternates) and `<link rel="canonical">` are generated automatically.
 
 > Scripts do not run inside the editor canvas (so a broken script can never freeze the editor). Press **Preview ▶** to see JavaScript and animations for real.
 
@@ -321,7 +323,7 @@ php artisan atlas:export site.zip            # pages + builder blocks + images (
 php artisan atlas:import site.zip --force    # into another install (image URLs are rewritten automatically)
 ```
 
-Bundles are validated on import (format version, block names, path-traversal-safe zips) and never overwrite existing pages unless `--force`.
+Bundles are validated on import (format version, block names, path-traversal-safe zips) and never overwrite existing pages unless `--force`. **Only import bundles you trust:** like the editor, a bundle can carry raw HTML/JS (Custom Code blocks, page code).
 
 ## Embedding pages in your own views
 ```blade
@@ -334,7 +336,7 @@ Bundles are validated on import (format version, block names, path-traversal-saf
 | Key | Default | Purpose |
 |-----|---------|---------|
 | `path` / `middleware` | `atlas` / `['web']` | editor URL and middleware |
-| `frontend.enabled / prefix / home / locale_prefix` | `true / '' / 'home' / false` | public page routing |
+| `frontend.enabled / prefix / home / locale_prefix / sitemap` | `true / '' / 'home' / false / true` | public page routing, `/sitemap.xml` |
 | `layout` | `atlas::layouts.document` | page layout view |
 | `custom_code` | `true` | raw HTML/CSS/JS, block builder |
 | `allow_blade_code` | `false` | Blade Code block |

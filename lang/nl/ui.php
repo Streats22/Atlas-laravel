@@ -14,7 +14,7 @@ return [
     'blocks' => 'Blokken', 'layers' => 'Lagen', 'page' => 'Pagina', 'search_blocks' => 'Blokken zoeken…',
     'drag_hint' => 'Sleep naar het canvas, of klik om toe te voegen', 'nothing_here' => 'Nog niets — voeg een blok toe via het tabblad Blokken.',
     'select_hint' => 'Selecteer een blok op het canvas om het te bewerken.',
-    'shortcuts' => 'Sneltoetsen: Ctrl+S opslaan · Ctrl+Z ongedaan · Ctrl+D dupliceren · Del verwijderen · Esc annuleren',
+    'shortcuts' => 'Sneltoetsen: Ctrl+S opslaan · Ctrl+Z ongedaan · Ctrl+D dupliceren · Ctrl+C/X/V kopiëren · Del verwijderen · Esc annuleren',
     'duplicate' => 'Dupliceren', 'delete' => 'Verwijderen', 'move_up' => 'Omhoog', 'move_down' => 'Omlaag',
     'select_parent' => 'Selecteer bovenliggend blok', 'drag_to_move' => 'Sleep om te verplaatsen', 'unknown_type' => 'Onbekend blok', 'unknown_block' => 'Dit bloktype is niet geregistreerd. De gegevens blijven bewaard.',
     'content' => 'Inhoud', 'advanced' => 'Geavanceerd', 'group_animation' => 'Animatie', 'group_layout' => 'Ruimte & zichtbaarheid', 'group_code' => 'Code & identiteit',

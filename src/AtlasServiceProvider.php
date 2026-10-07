@@ -16,6 +16,7 @@ use Atlas\Console\ListBlocksCommand;
 use Atlas\Console\MakeBlockCommand;
 use Atlas\Console\PackageCommand;
 use Atlas\Http\Controllers\FrontendController;
+use Atlas\Http\Controllers\SitemapController;
 use Atlas\Http\Middleware\Authorize;
 use Atlas\Models\CustomBlock;
 use Atlas\Packaging\MediaUrls;
@@ -171,6 +172,10 @@ class AtlasServiceProvider extends ServiceProvider
                         ->where('locale', $pattern)->name('atlas.home.locale');
                     Route::get(trim($prefix . '/{locale}/{slug}', '/'), [FrontendController::class, 'showLocale'])
                         ->where('locale', $pattern)->where('slug', '[a-z0-9]+(?:[\-\/][a-z0-9]+)*')->name('atlas.page.locale');
+                }
+
+                if (config('atlas.frontend.sitemap')) {
+                    Route::get('sitemap.xml', SitemapController::class)->name('atlas.sitemap');
                 }
 
                 if ($prefix === '' && config('atlas.frontend.home')) {

@@ -12,6 +12,7 @@ Route::get('/', [PageController::class, 'index'])->name('index');
 Route::post('pages', [PageController::class, 'store'])->name('pages.store');
 Route::get('pages/{page}/edit', [PageController::class, 'edit'])->name('pages.edit');
 Route::get('pages/{page}/preview', [PageController::class, 'preview'])->name('pages.preview');
+Route::post('pages/{page}/duplicate', [PageController::class, 'duplicate'])->name('pages.duplicate');
 Route::delete('pages/{page}', [PageController::class, 'destroy'])->name('pages.destroy');
 
 Route::put('api/pages/{page}', [PageController::class, 'update'])->name('api.pages.update');

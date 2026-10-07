@@ -94,7 +94,8 @@ final class DocumentBuilder
 
     private function socialTags(PageData $page, string $title, ?string $description): string
     {
-        $tags = '<meta property="og:title" content="' . e($title) . "\">\n";
+        $tags = '<link rel="canonical" href="' . e(Locales::url($page->model, Locales::current())) . "\">\n";
+        $tags .= '<meta property="og:title" content="' . e($title) . "\">\n";
 
         if ($description) {
             $tags .= '<meta property="og:description" content="' . e($description) . "\">\n";

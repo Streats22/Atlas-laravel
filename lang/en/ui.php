@@ -16,7 +16,7 @@ return [
     'blocks' => 'Blocks', 'layers' => 'Layers', 'page' => 'Page', 'search_blocks' => 'Search blocks…',
     'drag_hint' => 'Drag onto the canvas, or click to add', 'nothing_here' => 'Nothing here yet — add a block from the Blocks tab.',
     'select_hint' => 'Select a block on the canvas to edit it.',
-    'shortcuts' => 'Shortcuts: Ctrl+S save · Ctrl+Z undo · Ctrl+D duplicate · Del delete · Esc cancel',
+    'shortcuts' => 'Shortcuts: Ctrl+S save · Ctrl+Z undo · Ctrl+D duplicate · Ctrl+C/X/V copy · Del delete · Esc cancel',
     'duplicate' => 'Duplicate', 'delete' => 'Delete', 'move_up' => 'Move up', 'move_down' => 'Move down',
     'select_parent' => 'Select parent', 'drag_to_move' => 'Drag to move', 'unknown_type' => 'Unknown block', 'unknown_block' => 'This block type is not registered. Its data is preserved.',
     'content' => 'Content', 'advanced' => 'Advanced', 'group_animation' => 'Animation', 'group_layout' => 'Spacing & visibility', 'group_code' => 'Code & identity',

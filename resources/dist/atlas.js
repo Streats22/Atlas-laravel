@@ -146,7 +146,33 @@
     markDirty();
     refreshAll();
   }
-  function markDirty() { state.dirty = true; setStatus(t('unsaved')); }
+  function markDirty() { state.dirty = true; setStatus(t('unsaved')); queueDraft(); }
+
+  // ---- local draft (survives crashes / accidental tab closes)
+  var DRAFT_KEY = 'atlas-draft-' + cfg.page.id, draftTimer;
+  function queueDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(storeDraft, 700); }
+  function storeDraft() {
+    try {
+      var p = state.page;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), tree: state.tree, page: { title: p.title, slug: p.slug, status: p.status, css: p.css, js: p.js, head: p.head, meta: p.meta } }));
+    } catch (e) {}
+  }
+  function clearDraft() { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+  function offerDraft() {
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
+    if (!d || !d.tree || d.at / 1000 <= (cfg.page.updated_at || 0) || JSON.stringify(d.tree) === JSON.stringify(state.tree)) return;
+    var bar = h('div', { class: 'atlas-banner' }, t('restore_draft', { time: new Date(d.at).toLocaleString() }),
+      h('button', { class: 'atlas-btn atlas-btn--primary', onclick: function () {
+        state.tree = normalize(d.tree);
+        Object.assign(state.page, d.page || {});
+        state.page.meta = state.page.meta || {}; state.page.meta.titles = state.page.meta.titles || {}; state.page.meta.descriptions = state.page.meta.descriptions || {};
+        els.title.value = titleValue(); els.slug.value = state.page.slug; els.statusSel.value = state.page.status;
+        state.selected = null; snapshot(); markDirty(); refreshAll(); bar.remove();
+      } }, t('restore')),
+      h('button', { class: 'atlas-btn', onclick: function () { clearDraft(); bar.remove(); } }, t('discard')));
+    els.stage.append(bar);
+  }
 
   /* ------------------------------------------------------------- mutation */
   // Structural change: snapshot, rerender canvas, refresh panels.
@@ -199,6 +225,42 @@
     f.list.splice(to, 0, f.list.splice(f.index, 1)[0]);
     commit();
   }
+  // Copy / cut / paste (shared across pages through localStorage).
+  function copySelected(cut) {
+    var f = state.selected && find(state.selected);
+    if (!f) return;
+    try { localStorage.setItem('atlas-clip', JSON.stringify(f.node)); } catch (e) {}
+    toast(t('copied'));
+    if (cut) deleteSelected();
+  }
+  function pasteClipboard() {
+    var node = null;
+    try { node = JSON.parse(localStorage.getItem('atlas-clip') || 'null'); } catch (e) {}
+    if (!node || !node.type) return;
+    node = normalize([node])[0];
+    relabel(node);
+    var sel = state.selected && find(state.selected);
+    if (sel && isContainer(sel.node.type)) sel.node.children.push(node);
+    else if (sel) sel.list.splice(sel.index + 1, 0, node);
+    else state.tree.push(node);
+    state.selected = node.id;
+    commit();
+    toast(t('pasted'));
+  }
+
+  // Move a node relative to another one (used by the Layers panel).
+  function moveNode(id, targetId, zone) {
+    var dragged = find(id);
+    if (!dragged || id === targetId || find(targetId, dragged.node.children)) return; // never into itself
+    var node = removeNode(id);
+    var target = find(targetId);
+    if (!target) return;
+    if (zone === 'inside') target.node.children.push(node);
+    else target.list.splice(target.index + (zone === 'after' ? 1 : 0), 0, node);
+    state.selected = node.id;
+    commit();
+  }
+
   // Click-to-insert from the palette (when not dragging).
   function insertDefault(type) {
     var sel = state.selected && find(state.selected);
@@ -374,16 +436,30 @@
 
   function renderLayers() {
     if (state.tab !== 'layers') return;
-    var box = h('div');
+    var box = h('div'), dragId = null;
+    function zoneOf(e, row, container) {
+      var r = row.getBoundingClientRect(), y = (e.clientY - r.top) / r.height;
+      if (container && y > 0.28 && y < 0.72) return 'inside';
+      return y < 0.5 ? 'before' : 'after';
+    }
+    function clear() { box.querySelectorAll('.atlas-layer').forEach(function (r) { r.classList.remove('atlas-layer--before', 'atlas-layer--after', 'atlas-layer--inside'); }); }
     (function walk(list, depth) {
       list.forEach(function (n) {
-        box.append(h('div', {
+        var row = h('div', {
           class: 'atlas-layer' + (n.id === state.selected ? ' atlas-layer--sel' : ''),
           style: { paddingLeft: (6 + depth * 14) + 'px' },
+          draggable: 'true',
+          title: t('drag_to_move'),
           onclick: function () { select(n.id); },
           onmouseenter: function () { hoverId(n.id); },
-          onmouseleave: function () { hoverId(null); }
-        }, h('span', null, icon(n.type)), label(n.type), h('span', { class: 'atlas-layer__hint' }, hint(n))));
+          onmouseleave: function () { hoverId(null); },
+          ondragstart: function (e) { dragId = n.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', n.id); },
+          ondragover: function (e) { if (!dragId) return; e.preventDefault(); clear(); row.classList.add('atlas-layer--' + zoneOf(e, row, isContainer(n.type))); },
+          ondragleave: function () { row.classList.remove('atlas-layer--before', 'atlas-layer--after', 'atlas-layer--inside'); },
+          ondrop: function (e) { e.preventDefault(); var z = zoneOf(e, row, isContainer(n.type)), id = dragId; dragId = null; clear(); if (id) moveNode(id, n.id, z); },
+          ondragend: function () { dragId = null; clear(); }
+        }, h('span', null, icon(n.type)), label(n.type), h('span', { class: 'atlas-layer__hint' }, hint(n)));
+        box.append(row);
         walk(n.children, depth + 1);
       });
     })(state.tree, 0);
@@ -965,6 +1041,7 @@
         return false;
       }
       state.dirty = false;
+      clearDraft();
       state.page.slug = r.j.slug;
       els.slug.value = r.j.slug;
       els.viewLink.href = r.j.url;
@@ -994,6 +1071,9 @@
     if (mod && k === 'z') { e.preventDefault(); restore(e.shiftKey ? hIndex + 1 : hIndex - 1); }
     else if (mod && k === 'y') { e.preventDefault(); restore(hIndex + 1); }
     else if (mod && k === 'd') { e.preventDefault(); duplicateSelected(); }
+    else if (mod && k === 'c') { if (state.selected) { e.preventDefault(); copySelected(false); } }
+    else if (mod && k === 'x') { if (state.selected) { e.preventDefault(); copySelected(true); } }
+    else if (mod && k === 'v') { e.preventDefault(); pasteClipboard(); }
     else if (e.key === 'Delete' || e.key === 'Backspace') { if (state.selected) { e.preventDefault(); deleteSelected(); } }
     else if (e.key === 'Escape') select(null);
   }
@@ -1006,6 +1086,7 @@
   renderInspector();
   syncUndo();
   scheduleRender(0);
+  offerDraft();
 
   // Small hook for tests / power users.
   window.AtlasEditor = { state: state, save: save, select: select, addBlock: addBlock };

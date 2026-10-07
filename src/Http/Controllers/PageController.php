@@ -23,9 +23,34 @@ use Illuminate\View\View;
 
 class PageController
 {
-    public function index(): View
+    private const PER_PAGE = 20;
+
+    public function index(Request $request): View
     {
-        return view('atlas::pages', ['pages' => Page::latest('updated_at')->get()]);
+        $term = trim((string) $request->query('q', ''));
+
+        $pages = Page::query()
+            ->when($term !== '', fn ($query) => $query->where(function ($q) use ($term) {
+                // Bound parameter: SQL-safe. (%/_ act as LIKE wildcards, which is fine for an admin search box.)
+                $like = '%' . $term . '%';
+                $q->where('title', 'like', $like)->orWhere('slug', 'like', $like);
+            }))
+            ->latest('updated_at')
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        return view('atlas::pages', ['pages' => $pages, 'term' => $term]);
+    }
+
+    public function duplicate(Page $page): RedirectResponse
+    {
+        $copy = $page->replicate(['published_at']);
+        $copy->title = $page->title . ' (copy)';
+        $copy->slug = $this->uniqueSlug($page->slug . '-copy');
+        $copy->status = PageStatus::Draft;
+        $copy->save();
+
+        return redirect()->route('atlas.pages.edit', $copy);
     }
 
     public function store(Request $request): RedirectResponse
@@ -96,6 +121,7 @@ class PageController
         return [
             'page' => [
                 'id' => $page->id,
+                'updated_at' => $page->updated_at?->timestamp,
                 'title' => $page->title,
                 'slug' => $page->slug,
                 'status' => $page->status->value,

@@ -1,0 +1,32 @@
+<?php
+
+namespace {{ namespace }};
+
+use Atlas\Blocks\Block;
+use Atlas\Blocks\Field;
+
+class {{ class }} extends Block
+{
+    public function type(): string
+    {
+        return '{{ type }}';
+    }
+
+    public function label(): string
+    {
+        return '{{ label }}';
+    }
+
+    public function fields(): array
+    {
+        return [
+            Field::text('title', 'Title', 'Hello from {{ label }}'),
+        ];
+    }
+
+    // Anything goes here: query models, call APIs, pass extra data to the view.
+    public function data(array $props): array
+    {
+        return [];
+    }
+}

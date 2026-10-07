@@ -1,0 +1,1 @@
+<p class="atlas-text" style="text-align:{{ $props['align'] ?? 'left' }};font-size:{{ (int) ($props['size'] ?? 17) }}px;@if(!empty($props['color']))color:{{ $props['color'] }};@endif">{!! nl2br(e($props['text'] ?? '')) !!}</p>

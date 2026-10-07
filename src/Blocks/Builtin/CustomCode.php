@@ -1,0 +1,54 @@
+<?php
+
+namespace Atlas\Blocks\Builtin;
+
+use Atlas\Blocks\Block;
+use Atlas\Blocks\Field;
+use Atlas\Rendering\Renderer;
+use Illuminate\Support\HtmlString;
+
+class CustomCode extends Block
+{
+    public function type(): string
+    {
+        return 'custom-code';
+    }
+
+    public function label(): string
+    {
+        return 'Custom Code';
+    }
+
+    public function icon(): string
+    {
+        return '</>';
+    }
+
+    public function category(): string
+    {
+        return 'Developer';
+    }
+
+    public function view(): string
+    {
+        return 'atlas::blocks.custom-code';
+    }
+
+    public function fields(): array
+    {
+        return [
+            Field::code('html', 'HTML', '<div class="hello">Hello from custom code</div>', 'html'),
+            Field::code('css', 'CSS  (use {{selector}} for this block)', '{{selector}} .hello { padding: 1rem; }', 'css'),
+            Field::code('js', 'JavaScript  (variable `el` is this block)', '', 'js'),
+            Field::checkbox('isolate', 'Isolate JavaScript in its own scope', true),
+        ];
+    }
+
+    public function render(array $props, HtmlString $children, array $node, bool $editing): string
+    {
+        $domId = $node['dom_id'] ?? 'atlas-'.($node['id'] ?? '');
+        $props['css'] = Renderer::scopeCss((string) ($props['css'] ?? ''), $domId);
+
+        return parent::render($props, $children, $node, $editing);
+    }
+}

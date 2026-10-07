@@ -1,0 +1,1 @@
+{{ $head }}{{ $content }}{{ $scripts }}

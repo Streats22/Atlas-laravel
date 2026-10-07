@@ -1,0 +1,1 @@
+<div class="atlas-columns @if($props['stack'] ?? true) atlas-columns--stack @endif" style="display:grid;grid-template-columns:{{ $props['layout'] ?? '1fr 1fr' }};gap:{{ (int) ($props['gap'] ?? 0) }}px;align-items:{{ $props['align'] ?? 'stretch' }};">{!! $children !!}</div>

@@ -1,0 +1,4 @@
+{{-- Available: $props, $children, $node, $id, $domId, $editing --}}
+<div class="{{ $domId }}-inner">
+    <h3>{{ $props['title'] }}</h3>
+</div>

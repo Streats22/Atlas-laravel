@@ -166,3 +166,9 @@ h4.atlas-h-auto { font-size: 1.35rem; } h5.atlas-h-auto { font-size: 1.15rem; } 
 .atlas-lightbox { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: rgba(5,8,16,.92); padding: 2.5rem 1rem; animation: atlas-pop .2s ease; }
 .atlas-lightbox img { max-width: min(1200px, 100%); max-height: 100%; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.6); } .atlas-lightbox figure { margin: 0; text-align: center; color: #fff; max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: .7rem; min-height: 0; } .atlas-lightbox figcaption { font-size: .95rem; opacity: .85; }
 .atlas-lightbox button { position: absolute; border: 0; background: rgba(255,255,255,.14); color: #fff; width: 2.8rem; height: 2.8rem; border-radius: 50%; font-size: 1.5rem; cursor: pointer; } .atlas-lightbox button:hover { background: rgba(255,255,255,.3); } .atlas-lightbox [data-close] { top: 1rem; right: 1rem; } .atlas-lightbox [data-prev] { left: 1rem; top: 50%; } .atlas-lightbox [data-next] { right: 1rem; top: 50%; }
+
+/* ---------- Tone-aware refinements ---------- */
+.atlas-tone-accent .atlas-social a, .atlas-tone-inverted .atlas-social a { background: transparent; color: var(--atlas-text); border-color: var(--atlas-border); }
+.atlas-tone-accent .atlas-social a:hover, .atlas-tone-inverted .atlas-social a:hover { background: var(--atlas-text); color: var(--atlas-bg); }
+.atlas-carousel--plain .atlas-carousel__dots button { background: color-mix(in srgb, var(--atlas-text) 28%, transparent); }
+.atlas-carousel--plain .atlas-carousel__dots button.is-active { background: var(--atlas-accent); }

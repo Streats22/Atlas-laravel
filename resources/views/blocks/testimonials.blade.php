@@ -7,7 +7,7 @@
     };
 @endphp
 @if($carousel)
-<div class="atlas-carousel" data-atlas-carousel data-autoplay="6000" data-atlas-rt style="--h:auto">
+<div class="atlas-carousel atlas-carousel--plain" data-atlas-carousel data-autoplay="6000" data-atlas-rt style="--h:auto">
     <div class="atlas-carousel__track">
         @foreach($items as $item)
             @php($av = $safe($item['avatar'] ?? ''))

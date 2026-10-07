@@ -98,7 +98,12 @@ return [
     | value is the fallback. `locale_prefix` (under `frontend`) serves
     | non-default locales at /{locale}/{slug}; otherwise ?lang=xx is used.
     */
-    'locales' => [],
+    // Or set ATLAS_LOCALES="en:English,nl:Nederlands" in .env
+    'locales' => array_column(
+        array_map(fn ($pair) => array_pad(explode(':', $pair, 2), 2, ''), array_filter(explode(',', (string) env('ATLAS_LOCALES', '')))),
+        1,
+        0
+    ),
     'default_locale' => null,
 
     /*

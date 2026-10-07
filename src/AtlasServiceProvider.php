@@ -10,6 +10,7 @@ use Atlas\Models\CustomBlock;
 use Atlas\Support\Locales;
 use Atlas\Console\InstallCommand;
 use Atlas\Console\MakeBlockCommand;
+use Atlas\Console\DemoCommand;
 use Atlas\Console\ListBlocksCommand;
 use Atlas\Http\Controllers\FrontendController;
 use Atlas\Http\Middleware\Authorize;
@@ -53,7 +54,7 @@ class AtlasServiceProvider extends ServiceProvider
         $this->registerRoutes();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([InstallCommand::class, MakeBlockCommand::class, ListBlocksCommand::class]);
+            $this->commands([InstallCommand::class, MakeBlockCommand::class, ListBlocksCommand::class, DemoCommand::class]);
 
             $this->publishes([__DIR__.'/../config/atlas.php' => config_path('atlas.php')], 'atlas-config');
             $this->publishes([__DIR__.'/../resources/views' => resource_path('views/vendor/atlas')], 'atlas-views');

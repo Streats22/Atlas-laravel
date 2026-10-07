@@ -3,6 +3,7 @@ providers:
 migrations: true
 env:
   APP_ENV: local
+  ATLAS_LOCALES: "en:English,nl:Nederlands"
   DB_CONNECTION: sqlite
   SESSION_DRIVER: file
   APP_KEY: base64:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=

@@ -346,7 +346,7 @@
     function draw() {
       var cats = {}, order = [];
       cfg.blocks.forEach(function (b) {
-        if (q && b.label.toLowerCase().indexOf(q) === -1) return;
+        if (b.custom || (q && b.label.toLowerCase().indexOf(q) === -1)) return; // builder blocks have their own section
         if (!cats[b.category]) { cats[b.category] = []; order.push(b.category); }
         cats[b.category].push(b);
       });
@@ -526,11 +526,12 @@
           h('div', { class: 'atlas-rep__body' }, fd.fields.map(function (sub) { return fieldEl(item, sub, scope + ':' + fd.name + i); })));
         return det;
       });
-      wrap.replaceChildren(h('label', null, fd.label), rows, h('button', { class: 'atlas-btn', style: { width: '100%', justifyContent: 'center' }, onclick: function () {
+      var addBtn = h('button', { class: 'atlas-btn', style: { width: '100%', justifyContent: 'center' }, onclick: function () {
         var item = {}; fd.fields.forEach(function (sub) { item[sub.name] = clone(sub.default == null ? '' : sub.default); });
         list.push(item); touch(); draw();
         var last = wrap.querySelectorAll('.atlas-rep'); if (last.length) last[last.length - 1].open = true;
-      } }, t('add_item')));
+      } }, t('add_item'));
+      wrap.replaceChildren.apply(wrap, [h('label', null, fd.label)].concat(rows, [addBtn]));
     }
     function move(i, d) { var j = i + d; if (j < 0 || j >= list.length) return; list.splice(j, 0, list.splice(i, 1)[0]); touch(); draw(); }
     function touch() { snapshot(null); markDirty(); scheduleRender(); renderLayers(); }

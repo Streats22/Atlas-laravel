@@ -5,8 +5,12 @@ namespace Atlas;
 use Atlas\Blocks\Block;
 use Atlas\Blocks\BlockRegistry;
 use Atlas\Blocks\Builtin;
+use Atlas\Blocks\DbBlock;
+use Atlas\Models\CustomBlock;
+use Atlas\Support\Locales;
 use Atlas\Console\InstallCommand;
 use Atlas\Console\MakeBlockCommand;
+use Atlas\Console\ListBlocksCommand;
 use Atlas\Http\Controllers\FrontendController;
 use Atlas\Http\Middleware\Authorize;
 use Illuminate\Support\Facades\Blade;
@@ -29,7 +33,13 @@ class AtlasServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Pin the default content locale now: app()->setLocale() later overwrites config('app.locale').
+        if (! config('atlas.default_locale')) {
+            config(['atlas.default_locale' => config('app.locale', 'en')]);
+        }
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'atlas');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'atlas');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         Blade::componentNamespace('Atlas\\View\\Components', 'atlas');
 
@@ -43,10 +53,11 @@ class AtlasServiceProvider extends ServiceProvider
         $this->registerRoutes();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([InstallCommand::class, MakeBlockCommand::class]);
+            $this->commands([InstallCommand::class, MakeBlockCommand::class, ListBlocksCommand::class]);
 
             $this->publishes([__DIR__.'/../config/atlas.php' => config_path('atlas.php')], 'atlas-config');
             $this->publishes([__DIR__.'/../resources/views' => resource_path('views/vendor/atlas')], 'atlas-views');
+            $this->publishes([__DIR__.'/../lang' => $this->app->langPath('vendor/atlas')], 'atlas-lang');
             $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'atlas-migrations');
         }
     }
@@ -56,9 +67,13 @@ class AtlasServiceProvider extends ServiceProvider
         $atlas = $this->app->make(Atlas::class);
 
         $builtin = [
-            Builtin\Section::class, Builtin\Columns::class, Builtin\Heading::class,
-            Builtin\Text::class, Builtin\Image::class, Builtin\Button::class,
-            Builtin\Spacer::class, Builtin\Divider::class,
+            Builtin\Section::class, Builtin\Columns::class, Builtin\Spacer::class, Builtin\Divider::class, Builtin\Accordion::class,
+            Builtin\Heading::class, Builtin\Text::class, Builtin\Image::class, Builtin\Button::class, Builtin\IconBox::class,
+            Builtin\Hero::class, Builtin\Video::class, Builtin\SocialLinks::class,
+            Builtin\PortfolioGrid::class, Builtin\ProjectShowcase::class, Builtin\Testimonials::class, Builtin\Timeline::class,
+            Builtin\Skills::class, Builtin\Logos::class, Builtin\Gallery::class,
+            Builtin\Counter::class, Builtin\Typewriter::class, Builtin\Marquee::class, Builtin\Carousel::class, Builtin\Lottie::class,
+            Builtin\LanguageSwitcher::class, Builtin\ThemeToggle::class,
         ];
 
         if (config('atlas.custom_code')) {
@@ -77,6 +92,19 @@ class AtlasServiceProvider extends ServiceProvider
         }
 
         $this->discoverBlocks($atlas);
+
+        // Blocks made in the editor's block builder are loaded lazily from the database.
+        $atlas->blocks()->lazy(function ($registry) {
+            try {
+                foreach (CustomBlock::query()->get() as $model) {
+                    if (! $registry->has($model->type)) {
+                        $registry->register(new DbBlock($model));
+                    }
+                }
+            } catch (\Throwable) {
+                // The table may not exist yet (before `php artisan migrate`).
+            }
+        });
     }
 
     /** Auto-register every Block subclass found in app/Atlas/Blocks. */
@@ -124,6 +152,16 @@ class AtlasServiceProvider extends ServiceProvider
             $prefix = trim((string) config('atlas.frontend.prefix'), '/');
 
             Route::middleware(config('atlas.frontend.middleware', ['web']))->group(function () use ($prefix) {
+                // /{locale} and /{locale}/{slug} for non-default locales (must come before the generic slug route)
+                $others = array_map('preg_quote', array_values(array_diff(array_keys(Locales::available()), [Locales::default()])));
+                if (Locales::prefixed() && $others) {
+                    $pattern = implode('|', $others);
+                    Route::get(trim($prefix.'/{locale}', '/'), [FrontendController::class, 'homeLocale'])
+                        ->where('locale', $pattern)->name('atlas.home.locale');
+                    Route::get(trim($prefix.'/{locale}/{slug}', '/'), [FrontendController::class, 'showLocale'])
+                        ->where('locale', $pattern)->where('slug', '[a-z0-9]+(?:[\-\/][a-z0-9]+)*')->name('atlas.page.locale');
+                }
+
                 if ($prefix === '' && config('atlas.frontend.home')) {
                     Route::get('/', [FrontendController::class, 'home'])->name('atlas.home');
                 }

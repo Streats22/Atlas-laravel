@@ -3,7 +3,11 @@
 namespace Atlas\Http\Controllers;
 
 use Atlas\Facades\Atlas;
+use Atlas\Blocks\CommonFields;
+use Atlas\Models\CustomBlock;
 use Atlas\Models\Page;
+use Atlas\Support\Locales;
+use Atlas\Support\Theme;
 use Atlas\Support\Tree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -47,12 +51,21 @@ class PageController
                     'meta' => (object) ($page->meta ?? []),
                 ],
                 'blocks' => Atlas::blocks()->definitions(),
+                'common' => CommonFields::definitions(),
+                'customBlocks' => config('atlas.custom_code') ? CustomBlock::orderBy('label')->get()->map->toBuilder()->all() : [],
                 'customCode' => (bool) config('atlas.custom_code'),
+                'locales' => ['available' => (object) Locales::available(), 'default' => Locales::default()],
+                'theme' => Theme::settings((array) $page->meta),
+                'fonts' => array_keys(Theme::FONTS),
+                'i18n' => trans('atlas::ui'),
+                'uiLocale' => app()->getLocale(),
                 'urls' => [
                     'save' => route('atlas.api.pages.update', $page),
                     'render' => route('atlas.api.render'),
                     'upload' => route('atlas.api.upload'),
                     'preview' => route('atlas.pages.preview', $page),
+                    'blocks' => route('atlas.api.blocks.store'),
+                    'blockBase' => url(config('atlas.path').'/api/blocks'),
                     'pages' => route('atlas.index'),
                     'public' => $page->url(),
                 ],
@@ -82,6 +95,17 @@ class PageController
             'head' => ['nullable', 'string'],
             'meta' => ['nullable', 'array'],
             'meta.description' => ['nullable', 'string', 'max:500'],
+            'meta.theme' => ['nullable', Rule::in(['auto', 'light', 'dark'])],
+            'meta.theme_toggle' => ['nullable', 'boolean'],
+            'meta.accent' => ['nullable', 'regex:/^#[0-9a-fA-F]{3,8}$/'],
+            'meta.accent_dark' => ['nullable', 'regex:/^#[0-9a-fA-F]{3,8}$/'],
+            'meta.font' => ['nullable', Rule::in(array_keys(Theme::FONTS))],
+            'meta.heading_font' => ['nullable', Rule::in(array_merge(['same'], array_keys(Theme::FONTS)))],
+            'meta.og_image' => ['nullable', 'string', 'max:500'],
+            'meta.titles' => ['nullable', 'array'],
+            'meta.titles.*' => ['nullable', 'string', 'max:255'],
+            'meta.descriptions' => ['nullable', 'array'],
+            'meta.descriptions.*' => ['nullable', 'string', 'max:500'],
         ]);
 
         $custom = (bool) config('atlas.custom_code');
@@ -94,7 +118,7 @@ class PageController
             'css' => $custom ? ($data['css'] ?? null) : $page->css,
             'js' => $custom ? ($data['js'] ?? null) : $page->js,
             'head' => $custom ? ($data['head'] ?? null) : $page->head,
-            'meta' => ['description' => $data['meta']['description'] ?? null],
+            'meta' => $this->meta($data['meta'] ?? []),
         ]);
 
         if ($page->status === 'published' && ! $page->published_at) {
@@ -107,9 +131,38 @@ class PageController
     }
 
     /** Full render of any page (drafts included) — custom JavaScript runs here. */
-    public function preview(Page $page)
+    public function preview(Request $request, Page $page)
     {
+        Locales::apply($request->query('locale'));
+        $request->attributes->set('atlas.page', $page);
+
         return response($page->render())->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /** Keep only the meta keys Atlas understands; drop empty values and unknown locales. */
+    protected function meta(array $meta): array
+    {
+        $locales = array_keys(Locales::available());
+        $clean = fn (array $map) => array_filter(
+            array_intersect_key($map, array_flip($locales)),
+            fn ($v) => is_string($v) && $v !== ''
+        );
+
+        $out = collect($meta)->only(['description', 'theme', 'theme_toggle', 'accent', 'accent_dark', 'font', 'heading_font', 'og_image'])
+            ->filter(fn ($v) => $v !== null && $v !== '')
+            ->all();
+
+        if (isset($out['theme_toggle'])) {
+            $out['theme_toggle'] = (bool) $out['theme_toggle'];
+        }
+        if ($titles = $clean((array) ($meta['titles'] ?? []))) {
+            $out['titles'] = $titles;
+        }
+        if ($descriptions = $clean((array) ($meta['descriptions'] ?? []))) {
+            $out['descriptions'] = $descriptions;
+        }
+
+        return $out;
     }
 
     public function destroy(Page $page)

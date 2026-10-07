@@ -5,6 +5,12 @@ namespace {{ namespace }};
 use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 
+/**
+ * {{ label }} — an Atlas block.
+ *
+ * Fields appear in the editor's inspector. The block renders the Blade view
+ * resources/views/atlas/blocks/{{ type }}.blade.php.
+ */
 class {{ class }} extends Block
 {
     public function type(): string
@@ -12,15 +18,36 @@ class {{ class }} extends Block
         return '{{ type }}';
     }
 
+    // Use __('…') here to translate the label.
     public function label(): string
     {
         return '{{ label }}';
     }
 
+    public function category(): string
+    {
+        return '{{ group }}';
+    }
+
+    public function icon(): string
+    {
+        return '{{ icon }}';
+    }
+
+    public function container(): bool
+    {
+        return {{ container }};
+    }
+
     public function fields(): array
     {
         return [
-            Field::text('title', 'Title', 'Hello from {{ label }}'),
+            // Field::t(...) makes a field translatable: editors can fill it per language.
+            Field::t(Field::text('title', 'Title', 'Hello from {{ label }}')),
+            Field::textarea('body', 'Body', ''),
+            Field::select('align', ['left' => 'Left', 'center' => 'Center'], 'Align', 'left'),
+            Field::checkbox('highlight', 'Highlight'),
+            // Field::repeater('items', [Field::text('name'), Field::image('photo')], 'Items', [], 'name'),
         ];
     }
 
@@ -29,4 +56,10 @@ class {{ class }} extends Block
     {
         return [];
     }
+
+    // Optional: load libraries only on pages that use this block.
+    // public function assets(): array
+    // {
+    //     return ['styles' => ['https://…/lib.css'], 'scripts' => [['src' => 'https://…/lib.js', 'defer' => true]]];
+    // }
 }

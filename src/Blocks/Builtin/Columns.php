@@ -2,48 +2,19 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 
-class Columns extends Block
+class Columns extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'columns';
-    }
+    protected string $type = 'columns';
 
-    public function label(): string
-    {
-        return 'Columns';
-    }
+    protected string $label = 'Columns';
 
-    public function icon(): string
-    {
-        return '▥';
-    }
+    protected string $icon = '▥';
 
-    public function category(): string
-    {
-        return 'Layout';
-    }
+    protected string $category = 'Layout';
 
-    public function view(): string
-    {
-        return 'atlas::blocks.columns';
-    }
-
-    public function container(): bool
-    {
-        return true;
-    }
-
-    public function defaultChildren(): array
-    {
-        return [
-            ['type' => 'section', 'props' => ['padding' => 16, 'max_width' => 0, 'full_width' => true], 'children' => []],
-            ['type' => 'section', 'props' => ['padding' => 16, 'max_width' => 0, 'full_width' => true], 'children' => []],
-        ];
-    }
+    protected bool $container = true;
 
     public function fields(): array
     {
@@ -58,6 +29,14 @@ class Columns extends Block
             Field::number('gap', 'Gap (px)', 24),
             Field::select('align', ['stretch' => 'Stretch', 'start' => 'Top', 'center' => 'Middle', 'end' => 'Bottom'], 'Vertical align', 'stretch'),
             Field::checkbox('stack', 'Stack on mobile', true),
+            Field::checkbox('reverse', 'Reverse order on mobile'),
         ];
+    }
+
+    public function defaultChildren(): array
+    {
+        $cell = ['type' => 'section', 'props' => ['padding_y' => 8, 'max_width' => 'full'], 'children' => []];
+
+        return [$cell, $cell];
     }
 }

@@ -1,1 +1,1 @@
-{{ $head }}{{ $content }}{{ $scripts }}
+<div class="atlas-embed">{{ $head }}{{ $content }}{{ $scripts }}</div>

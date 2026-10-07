@@ -1,13 +1,8 @@
-/* Injected into the editor canvas (edit mode only). */
+/* Injected into the editor canvas only. */
 .atlas-block { min-height: 4px; }
-.atlas-placeholder {
-    padding: 22px; border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;
-    color: #64748b; text-align: center; font: 14px system-ui, sans-serif; margin: 4px;
-}
-.atlas-error {
-    padding: 12px 14px; border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b;
-    font: 13px system-ui, sans-serif; border-radius: 6px;
-}
+.atlas-error { padding: 12px 14px; border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b; font: 13px system-ui, sans-serif; border-radius: 6px; }
 .atlas-dragging { opacity: .35 !important; pointer-events: none !important; }
-html { cursor: default; }
-a, button { cursor: default; }
+.atlas-hide-mobile, .atlas-hide-desktop { display: block !important; opacity: .45; outline: 1px dashed var(--atlas-border); }
+a, button, summary { cursor: default; }
+details > summary { pointer-events: none; }
+.atlas-theme-fab { display: none; }

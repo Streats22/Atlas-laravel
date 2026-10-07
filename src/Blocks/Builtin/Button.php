@@ -2,49 +2,28 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 
-class Button extends Block
+class Button extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'button';
-    }
+    protected string $type = 'button';
 
-    public function label(): string
-    {
-        return 'Button';
-    }
+    protected string $label = 'Button';
 
-    public function icon(): string
-    {
-        return '◉';
-    }
+    protected string $icon = '◉';
 
-    public function category(): string
-    {
-        return 'Content';
-    }
-
-    public function view(): string
-    {
-        return 'atlas::blocks.button';
-    }
-
-    public function data(array $props): array
-    {
-        return ['href' => \Atlas\Support\Url::safe($props['url'] ?? '#') ?: '#'];
-    }
+    protected string $category = 'Content';
 
     public function fields(): array
     {
         return [
-            Field::text('label', 'Label', 'Click me'),
+            Field::t(Field::text('label', 'Label', 'Click me')),
             Field::url('url', 'Link', '#'),
-            Field::select('style', ['solid' => 'Solid', 'outline' => 'Outline'], 'Style', 'solid'),
-            Field::color('color', 'Colour', '#4f46e5'),
+            Field::select('style', ['solid' => 'Solid', 'outline' => 'Outline', 'ghost' => 'Ghost'], 'Style', 'solid'),
+            Field::select('size', ['sm' => 'Small', 'md' => 'Medium', 'lg' => 'Large'], 'Size', 'md'),
+            Field::color('color', 'Colour'),
             Field::select('align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'], 'Align', 'left'),
+            Field::text('icon', 'Icon / emoji after label', ''),
             Field::checkbox('new_tab', 'Open in new tab'),
         ];
     }

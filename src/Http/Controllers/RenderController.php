@@ -3,6 +3,7 @@
 namespace Atlas\Http\Controllers;
 
 use Atlas\Facades\Atlas;
+use Atlas\Support\Locales;
 use Atlas\Support\Tree;
 use Illuminate\Http\Request;
 
@@ -16,14 +17,24 @@ class RenderController
             'content' => ['present', 'array'],
             'css' => ['nullable', 'string'],
             'head' => ['nullable', 'string'],
+            'meta' => ['nullable', 'array'],
+            'locale' => ['nullable', 'string', 'max:12'],
         ]);
 
-        $html = Atlas::renderer()->document([
-            'title' => $data['title'] ?? '',
-            'content' => Tree::sanitize($data['content']),
-            'css' => $data['css'] ?? null,
-            'head' => $data['head'] ?? null,
-        ], editing: true);
+        $previous = app()->getLocale();
+        Locales::apply($data['locale'] ?? null);
+
+        try {
+            $html = Atlas::renderer()->document([
+                'title' => $data['title'] ?? '',
+                'content' => Tree::sanitize($data['content']),
+                'css' => $data['css'] ?? null,
+                'head' => $data['head'] ?? null,
+                'meta' => $data['meta'] ?? [],
+            ], editing: true);
+        } finally {
+            app()->setLocale($previous);
+        }
 
         return response($html)->header('Content-Type', 'text/html; charset=utf-8');
     }

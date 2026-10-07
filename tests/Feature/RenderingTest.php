@@ -47,12 +47,13 @@ class RenderingTest extends TestCase
     {
         $html = (string) Atlas::renderer()->render([
             ['id' => 'c', 'type' => 'columns', 'props' => [], 'children' => [
-                ['id' => 't1', 'type' => 'text', 'props' => ['text' => "line1\nline2"], 'children' => []],
+                ['id' => 't1', 'type' => 'text', 'props' => ['text' => "**bold** and [safe](https://example.com) [bad](javascript:alert(1))"], 'children' => []],
             ]],
         ]);
 
         $this->assertStringContainsString('grid-template-columns:1fr 1fr', $html);
-        $this->assertStringContainsString('line1<br />', $html);
+        $this->assertStringContainsString('<strong>bold</strong>', $html);
+        $this->assertStringNotContainsString('javascript:', $html);
     }
 
     public function test_custom_code_block_outputs_raw_html_scoped_css_and_isolated_js(): void

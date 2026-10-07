@@ -8,7 +8,11 @@ use Illuminate\Support\Str;
 
 class MakeBlockCommand extends Command
 {
-    protected $signature = 'atlas:make-block {name : Block name, e.g. PricingTable} {--force : Overwrite existing files}';
+    protected $signature = 'atlas:make-block {name : Block name, e.g. PricingTable}
+        {--container : Let other blocks be dropped inside it}
+        {--group=Custom : Palette group}
+        {--icon=▢ : Palette icon}
+        {--force : Overwrite existing files}';
 
     protected $description = 'Create a custom Atlas block (PHP class + Blade view)';
 
@@ -38,8 +42,11 @@ class MakeBlockCommand extends Command
             '{{ class }}' => $class,
             '{{ type }}' => $type,
             '{{ label }}' => Str::headline($class),
+            '{{ group }}' => $this->option('group'),
+            '{{ icon }}' => $this->option('icon'),
+            '{{ container }}' => $this->option('container') ? 'true' : 'false',
         ]));
-        $files->put($viewPath, strtr($files->get(__DIR__.'/../../stubs/block-view.stub'), ['{{ label }}' => Str::headline($class)]));
+        $files->put($viewPath, strtr($files->get(__DIR__.'/../../stubs/block-view.stub'), ['{{ label }}' => Str::headline($class), '{{ type }}' => $type, '{{ children }}' => $this->option('container') ? "\n    <div class=\"{{ \$domId }}-children\">{!! \$children !!}</div>" : '']));
 
         $this->info("Block created: {$classPath}");
         $this->info("View created:  {$viewPath}");

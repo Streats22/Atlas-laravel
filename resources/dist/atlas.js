@@ -11,13 +11,22 @@
   var defs = {};
   cfg.blocks.forEach(function (b) { defs[b.type] = b; });
 
-  var COMMON_FIELDS = [{ type: 'text', name: 'css_class', label: 'CSS classes', default: '' }];
-  if (cfg.customCode) {
-    COMMON_FIELDS.push(
-      { type: 'text', name: 'html_id', label: 'HTML id', default: '' },
-      { type: 'code', name: 'custom_css', label: 'Custom CSS  ({{selector}} = this block)', default: '', language: 'css' }
-    );
+  var I18N = cfg.i18n || {};
+  function t(key, vars) {
+    var v = I18N[key] != null ? I18N[key] : key;
+    if (vars) Object.keys(vars).forEach(function (k) { v = v.replace(':' + k, vars[k]); });
+    return v;
   }
+  var COMMON_GROUPS = [
+    ['group_animation', ['anim', 'anim_duration', 'anim_delay', 'anim_hover']],
+    ['group_layout', ['visibility', 'margin_top', 'margin_bottom']],
+    ['group_code', ['css_class', 'html_id', 'custom_css']]
+  ];
+  var COMMON = {};
+  (cfg.common || []).forEach(function (f) { COMMON[f.name] = f; });
+  var LOCALES = Object.keys(cfg.locales.available || {});
+  var DEFAULT_LOCALE = cfg.locales.default;
+  var MULTI = LOCALES.length > 1;
 
   /* ---------------------------------------------------------------- state */
   var state = {
@@ -27,9 +36,13 @@
     device: 'desktop',
     tab: 'blocks',
     dirty: false,
-    saving: false
+    saving: false,
+    locale: cfg.locales.default,
+    previewTheme: null
   };
   state.page.meta = Array.isArray(state.page.meta) ? {} : (state.page.meta || {});
+  state.page.meta.titles = state.page.meta.titles || {};
+  state.page.meta.descriptions = state.page.meta.descriptions || {};
   var history = [JSON.stringify(state.tree)];
   var hIndex = 0;
   var lastCoalesce = { key: null, at: 0 };
@@ -59,6 +72,8 @@
     do { s = Math.random().toString(36).slice(2, 10); } while (!s || (state && find(s)));
     return s;
   }
+  // Translations live next to the default value as "name@locale".
+  function tkey(name) { return state.locale === DEFAULT_LOCALE ? name : name + '@' + state.locale; }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function normalize(nodes) {
     return (Array.isArray(nodes) ? nodes : []).map(function (n) {
@@ -131,7 +146,7 @@
     markDirty();
     refreshAll();
   }
-  function markDirty() { state.dirty = true; setStatus('Unsaved changes'); }
+  function markDirty() { state.dirty = true; setStatus(t('unsaved')); }
 
   /* ------------------------------------------------------------- mutation */
   // Structural change: snapshot, rerender canvas, refresh panels.
@@ -198,45 +213,49 @@
 
   function buildShell() {
     var p = state.page;
-    els.title = h('input', { class: 'atlas-input atlas-top__title', value: p.title, placeholder: 'Page title', oninput: function (e) { p.title = e.target.value; markDirty(); } });
-    els.slug = h('input', { class: 'atlas-input atlas-top__slug', value: p.slug, title: 'URL slug', oninput: function (e) { p.slug = e.target.value; markDirty(); } });
+    els.title = h('input', { class: 'atlas-input atlas-top__title', value: titleValue(), placeholder: t('page_title'), oninput: function (e) { setTitle(e.target.value); markDirty(); } });
+    els.slug = h('input', { class: 'atlas-input atlas-top__slug', value: p.slug, title: t('slug'), oninput: function (e) { p.slug = e.target.value; markDirty(); } });
     els.statusSel = h('select', { class: 'atlas-select', style: { width: 'auto' }, onchange: function (e) { p.status = e.target.value; markDirty(); } },
-      h('option', { value: 'draft' }, 'Draft'), h('option', { value: 'published' }, 'Published'));
+      h('option', { value: 'draft' }, t('draft')), h('option', { value: 'published' }, t('published')));
     els.statusSel.value = p.status;
-    els.status = h('span', { class: 'atlas-status' }, 'Saved');
-    els.undo = h('button', { class: 'atlas-btn', title: 'Undo (Ctrl+Z)', onclick: function () { restore(hIndex - 1); } }, '↶');
-    els.redo = h('button', { class: 'atlas-btn', title: 'Redo (Ctrl+Shift+Z)', onclick: function () { restore(hIndex + 1); } }, '↷');
+    els.status = h('span', { class: 'atlas-status' }, t('saved'));
+    els.undo = h('button', { class: 'atlas-btn', title: t('undo'), onclick: function () { restore(hIndex - 1); } }, '↶');
+    els.redo = h('button', { class: 'atlas-btn', title: t('redo'), onclick: function () { restore(hIndex + 1); } }, '↷');
     els.devices = {};
     var devices = h('div', { class: 'atlas-top__group' }, [['desktop', '🖥'], ['tablet', '▭'], ['mobile', '📱']].map(function (d) {
-      return els.devices[d[0]] = h('button', { class: 'atlas-btn', title: d[0], onclick: function () { setDevice(d[0]); } }, d[1]);
+      return els.devices[d[0]] = h('button', { class: 'atlas-btn', title: t('device_' + d[0]), onclick: function () { setDevice(d[0]); } }, d[1]);
     }));
-    els.save = h('button', { class: 'atlas-btn atlas-btn--primary', onclick: function () { save(); } }, 'Save');
-    els.viewLink = h('a', { class: 'atlas-btn', href: cfg.urls.public, target: '_blank', rel: 'noopener' }, 'View ↗');
+    els.save = h('button', { class: 'atlas-btn atlas-btn--primary', onclick: function () { save(); } }, t('save'));
+    els.viewLink = h('a', { class: 'atlas-btn', href: cfg.urls.public, target: '_blank', rel: 'noopener' }, t('view'));
+
+    // content language (only when more than one locale is configured)
+    els.localeSel = MULTI ? h('select', { class: 'atlas-select', style: { width: 'auto' }, title: t('language'), onchange: function (e) { setLocale(e.target.value); } },
+      LOCALES.map(function (c) { return h('option', { value: c }, '🌐 ' + cfg.locales.available[c] + (c === DEFAULT_LOCALE ? ' (' + t('default_lang') + ')' : '')); })) : null;
+
+    // canvas light/dark preview + editor UI theme
+    els.canvasTheme = h('button', { class: 'atlas-btn', title: t('canvas_theme'), onclick: toggleCanvasTheme }, '◐');
+    els.uiTheme = h('button', { class: 'atlas-btn', title: t('ui_theme'), onclick: toggleUiTheme }, '☾');
 
     var top = h('div', { class: 'atlas-top' },
-      h('a', { class: 'atlas-btn', href: cfg.urls.pages, title: 'All pages', onclick: leaveGuard }, '← Pages'),
-      els.title, els.slug, els.statusSel,
+      h('a', { class: 'atlas-btn', href: cfg.urls.pages, title: t('all_pages'), onclick: leaveGuard }, t('back')),
+      els.title, els.slug, els.statusSel, els.localeSel,
       h('span', { class: 'atlas-top__spacer' }),
-      els.status, els.undo, els.redo, devices,
-      h('button', { class: 'atlas-btn', onclick: preview }, 'Preview ▶'),
+      els.status, els.undo, els.redo, devices, els.canvasTheme, els.uiTheme,
+      h('button', { class: 'atlas-btn', onclick: preview }, t('preview')),
       els.viewLink, els.save);
 
-    // Left panel
     els.leftBody = h('div', { class: 'atlas-scroll' });
     els.tabs = {};
-    var tabDefs = [['blocks', 'Blocks'], ['layers', 'Layers']];
-    if (cfg.customCode) tabDefs.push(['page', 'Page code']);
-    var tabs = h('div', { class: 'atlas-tabs' }, tabDefs.map(function (t) {
-      return els.tabs[t[0]] = h('button', { class: 'atlas-tab', onclick: function () { setTab(t[0]); } }, t[1]);
+    var tabDefs = [['blocks', t('blocks')], ['layers', t('layers')], ['page', t('page')]];
+    var tabs = h('div', { class: 'atlas-tabs' }, tabDefs.map(function (d) {
+      return els.tabs[d[0]] = h('button', { class: 'atlas-tab', onclick: function () { setTab(d[0]); } }, d[1]);
     }));
     var left = h('aside', { class: 'atlas-side' }, tabs, els.leftBody);
 
-    // Stage
     els.iframe = h('iframe', { class: 'atlas-frame', sandbox: 'allow-same-origin', title: 'Canvas' });
     els.overlay = h('div', { class: 'atlas-overlay' });
     els.stage = h('main', { class: 'atlas-stage' }, els.iframe, els.overlay);
 
-    // Right
     els.inspector = h('div', { class: 'atlas-scroll' });
     var right = h('aside', { class: 'atlas-side atlas-side--right' }, els.inspector);
 
@@ -264,6 +283,43 @@
     renderLeft();
   }
   function setStatus(s) { if (els.status) els.status.textContent = s; }
+
+  // ---- content language & title
+  function titleValue() {
+    return state.locale === DEFAULT_LOCALE ? state.page.title : (state.page.meta.titles[state.locale] || '');
+  }
+  function setTitle(v) {
+    if (state.locale === DEFAULT_LOCALE) state.page.title = v; else state.page.meta.titles[state.locale] = v;
+  }
+  function setLocale(code) {
+    state.locale = code;
+    els.title.value = titleValue();
+    els.title.placeholder = state.locale === DEFAULT_LOCALE ? t('page_title') : state.page.title;
+    renderInspector();
+    if (state.tab === 'page') renderLeft();
+    scheduleRender(0);
+  }
+
+  // ---- themes
+  function toggleUiTheme() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var dark = cur === 'dark' || (cur !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('atlas-ui-theme', next); } catch (e) {}
+  }
+  function toggleCanvasTheme() {
+    var doc = frameDoc();
+    var cur = state.previewTheme || (doc && doc.documentElement.getAttribute('data-atlas-theme')) || 'auto';
+    var dark = cur === 'dark' || (cur !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    state.previewTheme = dark ? 'light' : 'dark';
+    applyCanvasTheme();
+  }
+  function applyCanvasTheme() {
+    var doc = frameDoc();
+    if (doc && state.previewTheme) doc.documentElement.setAttribute('data-atlas-theme', state.previewTheme);
+    els.canvasTheme.classList.toggle('atlas-btn--active', !!state.previewTheme);
+  }
   function syncUndo() {
     els.undo.disabled = hIndex <= 0;
     els.redo.disabled = hIndex >= history.length - 1;
@@ -284,23 +340,34 @@
 
   function renderPalette() {
     var q = '';
-    var search = h('input', { class: 'atlas-input', placeholder: 'Search blocks…', style: { marginBottom: '12px' }, oninput: function (e) { q = e.target.value.toLowerCase(); draw(); } });
+    var search = h('input', { class: 'atlas-input', placeholder: t('search_blocks'), style: { marginBottom: '12px' }, oninput: function (e) { q = e.target.value.toLowerCase(); draw(); } });
     var holder = h('div');
     els.leftBody.replaceChildren(search, holder);
     function draw() {
-      var cats = {};
+      var cats = {}, order = [];
       cfg.blocks.forEach(function (b) {
         if (q && b.label.toLowerCase().indexOf(q) === -1) return;
-        (cats[b.category] = cats[b.category] || []).push(b);
+        if (!cats[b.category]) { cats[b.category] = []; order.push(b.category); }
+        cats[b.category].push(b);
       });
-      holder.replaceChildren.apply(holder, Object.keys(cats).map(function (c) {
+      var out = order.map(function (c) {
         return h('div', null,
           h('div', { class: 'atlas-cat' }, c),
           h('div', { class: 'atlas-palette' }, cats[c].map(function (b) {
-            return h('div', { class: 'atlas-block-item', title: 'Drag onto the canvas, or click to add', onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: b.type }); } },
+            return h('div', { class: 'atlas-block-item', title: t('drag_hint'), onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: b.type }); } },
               h('span', { class: 'atlas-block-item__icon' }, b.icon), b.label);
           })));
-      }));
+      });
+      if (cfg.customCode) {
+        out.push(h('div', null, h('div', { class: 'atlas-cat' }, t('custom_blocks')),
+          (cfg.customBlocks || []).map(function (cb) {
+            return h('div', { class: 'atlas-custom-item' },
+              h('div', { class: 'atlas-block-item', style: { cursor: 'grab' }, onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: cb.type }); } }, h('span', { class: 'atlas-block-item__icon' }, cb.icon || '◇'), cb.label),
+              h('button', { class: 'atlas-btn', title: t('edit_block'), onclick: function () { openBuilder(cb); } }, '✎'));
+          }),
+          h('button', { class: 'atlas-btn', style: { width: '100%', marginTop: '8px', justifyContent: 'center' }, onclick: function () { openBuilder(null); } }, t('new_block'))));
+      }
+      holder.replaceChildren.apply(holder, out);
     }
     draw();
   }
@@ -320,32 +387,54 @@
         walk(n.children, depth + 1);
       });
     })(state.tree, 0);
-    if (!state.tree.length) box.append(h('p', { class: 'atlas-hint' }, 'Nothing here yet — add a block from the Blocks tab.'));
+    if (!state.tree.length) box.append(h('p', { class: 'atlas-hint' }, t('nothing_here')));
     els.leftBody.replaceChildren(box);
   }
 
   function renderPageCode() {
-    var p = state.page;
-    function code(name, text, lang, rerender) {
+    var p = state.page, meta = p.meta, th = cfg.theme, dirty = function () { markDirty(); scheduleRender(300); };
+    function field(label, input) { return h('div', { class: 'atlas-field' }, h('label', null, label), input); }
+    function sel(key, options, cur, cb) {
+      var el = h('select', { class: 'atlas-select', onchange: function (e) { cb(e.target.value); dirty(); } }, options.map(function (o) { return h('option', { value: o[0] }, o[1]); }));
+      el.value = cur; return el;
+    }
+    function color(key, fallback) {
+      var cur = meta[key] || fallback;
+      var txt = h('input', { class: 'atlas-input', value: meta[key] || '', placeholder: fallback, oninput: function (e) { meta[key] = e.target.value; if (/^#[0-9a-f]{6}$/i.test(e.target.value)) sw.value = e.target.value; dirty(); } });
+      var sw = h('input', { class: 'atlas-swatch', type: 'color', value: /^#[0-9a-f]{6}$/i.test(cur) ? cur : '#4f46e5', oninput: function (e) { txt.value = e.target.value; meta[key] = e.target.value; dirty(); } });
+      return h('div', { class: 'atlas-row' }, sw, txt);
+    }
+    function code(name, text, rerender) {
       var ta = h('textarea', { class: 'atlas-textarea atlas-code', spellcheck: 'false', value: p[name] || '', oninput: function (e) { p[name] = e.target.value; markDirty(); if (rerender) scheduleRender(400); } });
       tabKeys(ta);
-      return h('div', { class: 'atlas-field' }, h('label', null, text, ' ', h('a', { href: '#', onclick: function (e) { e.preventDefault(); openCode(text, ta.value, function (v) { ta.value = v; ta.dispatchEvent(new Event('input')); }); } }, 'expand')), ta);
+      return h('div', { class: 'atlas-field' }, h('label', null, text, ' ', h('a', { href: '#', onclick: function (e) { e.preventDefault(); openCode(text, ta.value, function (v) { ta.value = v; ta.dispatchEvent(new Event('input')); }); } }, t('expand'))), ta);
     }
-    els.leftBody.replaceChildren(
-      h('div', { class: 'atlas-field' }, h('label', null, 'Meta description'),
-        h('textarea', { class: 'atlas-textarea', style: { minHeight: '50px' }, value: state.page.meta.description || '', oninput: function (e) { state.page.meta.description = e.target.value; markDirty(); } })),
-      code('css', 'Page CSS', 'css', true),
-      code('js', 'Page JavaScript (runs on the live page and Preview)', 'js', false),
-      code('head', 'Extra <head> HTML', 'html', true),
-      h('p', { class: 'atlas-hint' }, 'Scripts do not run inside the editor canvas. Use Preview ▶ to test JavaScript.')
-    );
+    var loc = state.locale;
+    var desc = h('textarea', { class: 'atlas-textarea', style: { minHeight: '60px' }, value: loc === DEFAULT_LOCALE ? (meta.description || '') : (meta.descriptions[loc] || ''), oninput: function (e) { if (loc === DEFAULT_LOCALE) meta.description = e.target.value; else meta.descriptions[loc] = e.target.value; markDirty(); } });
+    var fonts = [['system', t('font_system')], ['serif', t('font_serif')], ['mono', t('font_mono')], ['rounded', t('font_rounded')]];
+    var body = [
+      h('div', { class: 'atlas-cat' }, t('page_settings')),
+      field(t('meta_description') + (MULTI ? ' (' + loc + ')' : ''), desc),
+      field(t('og_image'), h('input', { class: 'atlas-input', value: meta.og_image || '', placeholder: 'https://…', oninput: function (e) { meta.og_image = e.target.value; markDirty(); } })),
+      h('div', { class: 'atlas-cat' }, t('theme')),
+      field(t('theme_mode'), sel('theme', [['auto', t('mode_auto')], ['light', t('mode_light')], ['dark', t('mode_dark')]], meta.theme || th.mode, function (v) { meta.theme = v; state.previewTheme = null; })),
+      h('div', { class: 'atlas-field atlas-field--check' }, h('label', null, (function () { var c = h('input', { type: 'checkbox', onchange: function (e) { meta.theme_toggle = e.target.checked; markDirty(); } }); c.checked = meta.theme_toggle != null ? !!meta.theme_toggle : !!th.toggle; return c; })(), t('show_toggle'))),
+      field(t('accent'), color('accent', th.accent)),
+      field(t('accent_dark'), color('accent_dark', th.accent_dark)),
+      field(t('font'), sel('font', fonts, meta.font || th.font, function (v) { meta.font = v; })),
+      field(t('heading_font'), sel('heading_font', [['same', t('font_same')]].concat(fonts), meta.heading_font || th.heading_font, function (v) { meta.heading_font = v; }))
+    ];
+    if (cfg.customCode) {
+      body.push(h('div', { class: 'atlas-cat' }, t('page_code')), code('css', t('page_css'), true), code('js', t('page_js'), false), code('head', t('page_head'), true), h('p', { class: 'atlas-hint' }, t('scripts_note')));
+    }
+    els.leftBody.replaceChildren.apply(els.leftBody, body);
   }
 
   /* ------------------------------------------------------------ inspector */
   function renderInspector() {
     var f = state.selected && find(state.selected);
     if (!f) {
-      els.inspector.replaceChildren(h('p', { class: 'atlas-hint' }, 'Select a block on the canvas to edit it.'), h('p', { class: 'atlas-hint' }, 'Shortcuts: Ctrl+S save · Ctrl+Z undo · Ctrl+D duplicate · Del delete'));
+      els.inspector.replaceChildren(h('p', { class: 'atlas-hint' }, t('select_hint')), h('p', { class: 'atlas-hint' }, t('shortcuts')));
       return;
     }
     var n = f.node;
@@ -353,23 +442,35 @@
     var body = [h('div', { class: 'atlas-insp-head' },
       h('h3', null, icon(n.type) + '  ' + label(n.type)),
       h('div', { class: 'atlas-row' },
-        h('button', { class: 'atlas-btn', title: 'Duplicate', onclick: duplicateSelected }, '⧉'),
-        h('button', { class: 'atlas-btn atlas-btn--danger', title: 'Delete', onclick: deleteSelected }, '✕')))];
-    if (!def) body.push(h('p', { class: 'atlas-hint' }, 'This block type is not registered. Its data is preserved.'));
-    (def ? def.fields : []).forEach(function (fd) { body.push(fieldEl(n, fd)); });
-    body.push(h('div', { class: 'atlas-section-title' }, 'Advanced'));
-    COMMON_FIELDS.forEach(function (fd) { body.push(fieldEl(n, fd)); });
+        h('button', { class: 'atlas-btn', title: t('duplicate'), onclick: duplicateSelected }, '⧉'),
+        h('button', { class: 'atlas-btn atlas-btn--danger', title: t('delete'), onclick: deleteSelected }, '✕')))];
+    if (MULTI && state.locale !== DEFAULT_LOCALE) body.push(h('p', { class: 'atlas-hint' }, '🌐 ' + t('translating', { locale: cfg.locales.available[state.locale] })));
+    if (!def) body.push(h('p', { class: 'atlas-hint' }, t('unknown_block')));
+    (def ? def.fields : []).forEach(function (fd) { body.push(fieldEl(n.props, fd, n.id)); });
+
+    COMMON_GROUPS.forEach(function (g, gi) {
+      var fields = g[1].filter(function (name) { return COMMON[name]; });
+      if (!fields.length) return;
+      body.push(h('details', { class: 'atlas-group', open: gi === 0 && n.props.anim && n.props.anim !== 'none' ? true : null },
+        h('summary', null, t(g[0])), fields.map(function (name) { return fieldEl(n.props, COMMON[name], n.id); })));
+    });
     els.inspector.replaceChildren.apply(els.inspector, body);
   }
 
-  function fieldEl(node, fd) {
-    var cur = node.props[fd.name];
-    if (cur === undefined) cur = fd.default;
-    var key = node.id + ':' + fd.name;
-    function set(v) { node.props[fd.name] = v; touch(key); }
+  function fieldEl(props, fd, scope) {
+    var translating = !!fd.translatable && state.locale !== DEFAULT_LOCALE;
+    var name = translating ? fd.name + '@' + state.locale : fd.name;
+    var cur = props[name];
+    if (cur === undefined) cur = translating ? '' : fd.default;
+    var key = scope + ':' + name;
+    function set(v) { props[name] = v; touch(key); }
+    var badge = fd.translatable && MULTI ? h('span', { class: 'atlas-tr' }, '🌐') : null;
+    var ph = translating ? String(props[fd.name] == null ? '' : props[fd.name]).slice(0, 80) : fd.placeholder;
     var input;
 
     switch (fd.type) {
+      case 'repeater':
+        return repeaterEl(props, fd, scope);
       case 'checkbox':
         input = h('input', { type: 'checkbox', onchange: function (e) { set(e.target.checked); } });
         input.checked = !!cur;
@@ -388,21 +489,53 @@
         input = h('div', { class: 'atlas-row' }, sw, txt);
         break;
       case 'textarea':
-        input = h('textarea', { class: 'atlas-textarea', value: cur || '', oninput: function (e) { set(e.target.value); } });
+        input = h('textarea', { class: 'atlas-textarea', value: cur || '', placeholder: ph, oninput: function (e) { set(e.target.value); } });
         break;
       case 'code':
         var ta = h('textarea', { class: 'atlas-textarea atlas-code', spellcheck: 'false', value: cur || '', oninput: function (e) { set(e.target.value); } });
         tabKeys(ta);
-        return h('div', { class: 'atlas-field' }, h('label', null, fd.label, ' ', h('a', { href: '#', onclick: function (e) { e.preventDefault(); openCode(fd.label, ta.value, function (v) { ta.value = v; set(v); }); } }, 'expand')), ta);
+        return h('div', { class: 'atlas-field' }, h('label', null, fd.label, ' ', h('a', { href: '#', onclick: function (e) { e.preventDefault(); openCode(fd.label, ta.value, function (v) { ta.value = v; set(v); }); } }, t('expand'))), ta);
       case 'image':
-        var url = h('input', { class: 'atlas-input', value: cur || '', placeholder: 'https://… or upload', oninput: function (e) { set(e.target.value); } });
+        var url = h('input', { class: 'atlas-input', value: cur || '', placeholder: 'https://… / upload', oninput: function (e) { set(e.target.value); } });
         var file = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: function (e) { upload(e.target.files[0], function (u) { url.value = u; set(u); }); } });
-        input = h('div', null, h('div', { class: 'atlas-row' }, url, h('button', { class: 'atlas-btn', onclick: function () { file.click(); } }, 'Upload')), file);
+        input = h('div', null, h('div', { class: 'atlas-row' }, url, h('button', { class: 'atlas-btn', onclick: function () { file.click(); } }, t('upload'))), file);
         break;
       default:
-        input = h('input', { class: 'atlas-input', value: cur == null ? '' : cur, placeholder: fd.placeholder, oninput: function (e) { set(e.target.value); } });
+        input = h('input', { class: 'atlas-input', value: cur == null ? '' : cur, placeholder: ph, oninput: function (e) { set(e.target.value); } });
     }
-    return h('div', { class: 'atlas-field' }, h('label', null, fd.label), input);
+    return h('div', { class: 'atlas-field' }, h('label', null, fd.label, badge), input);
+  }
+
+  // A list of items, each with sub-fields (portfolio projects, slides, …).
+  function repeaterEl(props, fd, scope) {
+    var list = Array.isArray(props[fd.name]) ? props[fd.name] : (props[fd.name] = clone(fd.default || []));
+    var wrap = h('div', { class: 'atlas-field' });
+    function titleOf(item, n) {
+      var v = item[fd.item_label];
+      return (typeof v === 'string' && v ? v : t('item')) + ' ' + (typeof v === 'string' && v ? '' : n + 1);
+    }
+    function draw() {
+      var rows = list.map(function (item, i) {
+        var det = h('details', { class: 'atlas-rep' },
+          h('summary', null,
+            h('span', { class: 'atlas-rep__title' }, titleOf(item, i)),
+            h('button', { class: 'atlas-mini', title: t('move_up'), onclick: function (e) { e.preventDefault(); move(i, -1); } }, '↑'),
+            h('button', { class: 'atlas-mini', title: t('move_down'), onclick: function (e) { e.preventDefault(); move(i, 1); } }, '↓'),
+            h('button', { class: 'atlas-mini', title: t('duplicate'), onclick: function (e) { e.preventDefault(); list.splice(i + 1, 0, clone(item)); touch(); draw(); } }, '⧉'),
+            h('button', { class: 'atlas-mini', title: t('remove'), onclick: function (e) { e.preventDefault(); list.splice(i, 1); touch(); draw(); } }, '✕')),
+          h('div', { class: 'atlas-rep__body' }, fd.fields.map(function (sub) { return fieldEl(item, sub, scope + ':' + fd.name + i); })));
+        return det;
+      });
+      wrap.replaceChildren(h('label', null, fd.label), rows, h('button', { class: 'atlas-btn', style: { width: '100%', justifyContent: 'center' }, onclick: function () {
+        var item = {}; fd.fields.forEach(function (sub) { item[sub.name] = clone(sub.default == null ? '' : sub.default); });
+        list.push(item); touch(); draw();
+        var last = wrap.querySelectorAll('.atlas-rep'); if (last.length) last[last.length - 1].open = true;
+      } }, t('add_item')));
+    }
+    function move(i, d) { var j = i + d; if (j < 0 || j >= list.length) return; list.splice(j, 0, list.splice(i, 1)[0]); touch(); draw(); }
+    function touch() { snapshot(null); markDirty(); scheduleRender(); renderLayers(); }
+    draw();
+    return wrap;
   }
 
   function upload(file, done) {
@@ -411,9 +544,9 @@
     fd.append('file', file);
     api(cfg.urls.upload, 'POST', fd, true).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (r) {
-        if (!r.ok) return toast((r.j.errors && r.j.errors.file && r.j.errors.file[0]) || 'Upload failed', true);
+        if (!r.ok) return toast((r.j.errors && r.j.errors.file && r.j.errors.file[0]) || t('upload_failed'), true);
         done(r.j.url);
-      }).catch(function () { toast('Upload failed', true); });
+      }).catch(function () { toast(t('upload_failed'), true); });
   }
 
   function tabKeys(ta) {
@@ -430,11 +563,117 @@
     var ta = h('textarea', { class: 'atlas-textarea atlas-code', spellcheck: 'false', value: value });
     tabKeys(ta);
     var modal = h('div', { class: 'atlas-modal' }, h('div', { class: 'atlas-modal__card' },
-      h('div', { class: 'atlas-modal__head' }, title, h('button', { class: 'atlas-btn atlas-btn--primary', onclick: close }, 'Done')), ta));
+      h('div', { class: 'atlas-modal__head' }, title, h('button', { class: 'atlas-btn atlas-btn--primary', onclick: close }, t('done'))), ta));
     function close() { done(ta.value); modal.remove(); }
     modal.addEventListener('mousedown', function (e) { if (e.target === modal) close(); });
     document.body.append(modal);
     ta.focus();
+  }
+
+  /* ------------------------------------------------ custom block builder */
+  var FIELD_TYPES = ['text', 'textarea', 'number', 'select', 'color', 'checkbox', 'image', 'code', 'repeater'];
+  function slugify(v) { return String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/^(\d)/, 'b-$1'); }
+  function optionsToText(o) { return Object.keys(o || {}).map(function (k) { return k + ':' + o[k]; }).join(', '); }
+  function textToOptions(txt) {
+    var o = {};
+    String(txt || '').split(',').forEach(function (p) {
+      p = p.trim(); if (!p) return;
+      var i = p.indexOf(':'); var v = i < 0 ? p : p.slice(0, i).trim(); o[v] = i < 0 ? p : p.slice(i + 1).trim();
+    });
+    return o;
+  }
+  function subToText(fields) { return (fields || []).map(function (f) { return f.name + ':' + f.type; }).join(', '); }
+  function textToSub(txt) {
+    return String(txt || '').split(',').map(function (p) {
+      var bits = p.trim().split(':'); var n = slugify(bits[0] || '').replace(/-/g, '_');
+      if (!n) return null;
+      var ty = FIELD_TYPES.indexOf(bits[1]) > 0 && bits[1] !== 'repeater' && bits[1] !== 'code' ? bits[1] : 'text';
+      return { name: n, label: n.replace(/_/g, ' '), type: ty, default: ty === 'checkbox' ? false : (ty === 'number' ? 0 : '') };
+    }).filter(Boolean);
+  }
+
+  function openBuilder(existing) {
+    var m = existing ? clone(existing) : { type: '', label: '', category: 'Custom', icon: '◇', container: false, fields: [{ name: 'title', label: 'Title', type: 'text', default: 'Hello' }], html: '<div class="my-block">\n  <h3>{{ title }}</h3>\n</div>', css: '{{selector}} .my-block { padding: 1rem; }', js: '' };
+    var typeTouched = !!existing;
+    var err = h('div', { class: 'atlas-error-text' });
+    function inp(prop, ph, extra) { return h('input', Object.assign({ class: 'atlas-input', value: m[prop] || '', placeholder: ph || '', oninput: function (e) { m[prop] = e.target.value; if (prop === 'label' && !typeTouched) { m.type = slugify(m.label); typeIn.value = m.type; } } }, extra || {})); }
+    var typeIn = h('input', { class: 'atlas-input', value: m.type, disabled: existing ? true : null, oninput: function (e) { typeTouched = true; m.type = e.target.value; } });
+    var rows = h('div');
+    function drawFields() {
+      rows.replaceChildren.apply(rows, m.fields.map(function (f, i) {
+        var opts = h('input', { class: 'atlas-input wide', placeholder: t('field_options'), value: optionsToText(f.options), oninput: function (e) { f.options = textToOptions(e.target.value); } });
+        var sub = h('input', { class: 'atlas-input wide', placeholder: t('field_sub'), value: subToText(f.fields), oninput: function (e) { f.fields = textToSub(e.target.value); } });
+        var tr = h('label', { class: 'wide', style: { fontSize: '12.5px' } }, (function () { var c = h('input', { type: 'checkbox', onchange: function (e) { f.translatable = e.target.checked; } }); c.checked = !!f.translatable; return c; })(), ' ' + t('field_translatable'));
+        var type = h('select', { class: 'atlas-select', onchange: function (e) { f.type = e.target.value; drawFields(); } }, FIELD_TYPES.map(function (x) { return h('option', { value: x }, x); }));
+        type.value = f.type;
+        return h('div', { class: 'atlas-frow' },
+          h('input', { class: 'atlas-input', placeholder: t('field_name'), value: f.name, oninput: function (e) { f.name = e.target.value; } }),
+          h('input', { class: 'atlas-input', placeholder: t('field_label'), value: f.label || '', oninput: function (e) { f.label = e.target.value; } }),
+          type,
+          h('button', { class: 'atlas-btn atlas-btn--danger', title: t('remove'), onclick: function () { m.fields.splice(i, 1); drawFields(); } }, '✕'),
+          f.type === 'checkbox' ? null : h('input', { class: 'atlas-input wide', placeholder: t('field_default'), value: f.default == null || typeof f.default === 'object' ? '' : f.default, oninput: function (e) { f.default = e.target.value; }, style: f.type === 'repeater' ? { display: 'none' } : {} }),
+          f.type === 'select' ? opts : null, f.type === 'repeater' ? sub : null,
+          f.type === 'text' || f.type === 'textarea' ? tr : null);
+      }));
+    }
+    drawFields();
+    function ta(prop, label, rows_) {
+      var el = h('textarea', { class: 'atlas-textarea atlas-code', spellcheck: 'false', value: m[prop] || '', style: { minHeight: rows_ + 'px' }, oninput: function (e) { m[prop] = e.target.value; } });
+      tabKeys(el);
+      return h('div', { class: 'atlas-field' }, h('label', null, label), el);
+    }
+    var cont = h('input', { type: 'checkbox', onchange: function (e) { m.container = e.target.checked; } }); cont.checked = !!m.container;
+    function close() { modal.remove(); }
+    function saveBlock() {
+      err.textContent = '';
+      var body = { label: m.label, type: m.type, category: m.category || 'Custom', icon: m.icon || '', container: !!m.container, html: m.html, css: m.css, js: m.js,
+        fields: m.fields.map(function (f) {
+          var o = { name: f.name, label: f.label, type: f.type, default: f.default, translatable: !!f.translatable };
+          if (f.type === 'select') o.options = f.options || {};
+          if (f.type === 'repeater') o.fields = (f.fields && f.fields.length ? f.fields : [{ name: 'title', label: 'Title', type: 'text', default: '' }]);
+          return o;
+        }) };
+      var url = existing ? cfg.urls.blockBase + '/' + existing.id : cfg.urls.blocks;
+      api(url, existing ? 'PUT' : 'POST', body).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (r) {
+        if (!r.ok) { err.textContent = r.j.errors ? r.j.errors[Object.keys(r.j.errors)[0]][0] : (r.j.message || t('save_failed')); return; }
+        var def = r.j.definition;
+        defs[def.type] = def;
+        var bi = cfg.blocks.findIndex(function (b) { return b.type === def.type; });
+        if (bi >= 0) cfg.blocks[bi] = def; else cfg.blocks.push(def);
+        var ci = cfg.customBlocks.findIndex(function (b) { return b.id === r.j.block.id; });
+        if (ci >= 0) cfg.customBlocks[ci] = r.j.block; else cfg.customBlocks.push(r.j.block);
+        toast(t('block_saved')); close();
+        if (state.tab === 'blocks') renderPalette();
+        scheduleRender(0);
+      }).catch(function () { err.textContent = t('save_failed'); });
+    }
+    function del() {
+      if (!existing || !confirm(t('delete_block_confirm'))) return;
+      api(cfg.urls.blockBase + '/' + existing.id, 'DELETE').then(function () {
+        delete defs[existing.type];
+        cfg.blocks = cfg.blocks.filter(function (b) { return b.type !== existing.type; });
+        cfg.customBlocks = cfg.customBlocks.filter(function (b) { return b.id !== existing.id; });
+        toast(t('block_deleted')); close();
+        if (state.tab === 'blocks') renderPalette();
+        scheduleRender(0);
+      });
+    }
+    var modal = h('div', { class: 'atlas-modal' }, h('div', { class: 'atlas-modal__card atlas-builder' },
+      h('div', { class: 'atlas-modal__head' }, t('block_builder'),
+        h('div', { class: 'atlas-row' }, existing ? h('button', { class: 'atlas-btn atlas-btn--danger', onclick: del }, t('delete')) : null,
+          h('button', { class: 'atlas-btn', onclick: close }, t('cancel')), h('button', { class: 'atlas-btn atlas-btn--primary', onclick: saveBlock }, t('save')))),
+      h('div', { class: 'atlas-builder__cols' },
+        h('div', null,
+          h('div', { class: 'atlas-field' }, h('label', null, t('block_label')), inp('label')),
+          h('div', { class: 'atlas-field' }, h('label', null, t('block_type')), typeIn),
+          h('div', { class: 'atlas-row' }, h('div', { class: 'atlas-field', style: { flex: 1 } }, h('label', null, t('block_category')), inp('category')), h('div', { class: 'atlas-field', style: { width: '90px' } }, h('label', null, t('block_icon')), inp('icon'))),
+          h('div', { class: 'atlas-field atlas-field--check' }, h('label', null, cont, t('block_container'))),
+          h('div', { class: 'atlas-cat' }, t('fields')), rows,
+          h('button', { class: 'atlas-btn', onclick: function () { m.fields.push({ name: 'field_' + (m.fields.length + 1), label: '', type: 'text', default: '' }); drawFields(); } }, t('add_field')),
+          err),
+        h('div', null, ta('html', t('tpl_html'), 200), ta('css', t('tpl_css'), 110), ta('js', t('tpl_js'), 110), h('p', { class: 'atlas-hint' }, t('tpl_help'))))));
+    modal.addEventListener('mousedown', function (e) { if (e.target === modal) { /* keep open: avoid losing work */ } });
+    document.body.append(modal);
   }
 
   /* -------------------------------------------------------------- canvas */
@@ -448,13 +687,13 @@
     var seq = ++renderSeq;
     var win = els.iframe.contentWindow;
     if (win && win.document && win.document.body) savedScroll = win.scrollY;
-    api(cfg.urls.render, 'POST', { title: state.page.title, content: state.tree, css: state.page.css, head: state.page.head })
+    api(cfg.urls.render, 'POST', { title: titleValue() || state.page.title, content: state.tree, css: state.page.css, head: state.page.head, meta: metaPayload(), locale: state.locale })
       .then(function (r) { return r.text().then(function (t) { return { ok: r.ok, t: t }; }); })
       .then(function (r) {
         if (seq !== renderSeq) return;
-        if (!r.ok) return toast('Canvas render failed (' + r.t.slice(0, 120) + ')', true);
+        if (!r.ok) return toast(t('canvas_failed') + ' (' + r.t.slice(0, 120) + ')', true);
         els.iframe.srcdoc = r.t;
-      }).catch(function () { toast('Canvas render failed', true); });
+      }).catch(function () { toast(t('canvas_failed'), true); });
   }
 
   function frameDoc() { try { return els.iframe.contentDocument; } catch (e) { return null; } }
@@ -462,6 +701,7 @@
   function onFrameLoad() {
     var doc = frameDoc();
     if (!doc) return;
+    applyCanvasTheme();
     els.iframe.contentWindow.scrollTo(0, savedScroll);
     doc.addEventListener('mousemove', function (e) {
       if (drag) return;
@@ -523,13 +763,13 @@
     place(els.selBox, r);
     var f = find(state.selected);
     els.selBox.replaceChildren(h('div', { class: 'atlas-box__bar' + (r.top < 34 ? ' atlas-box__bar--in' : '') },
-      h('span', { class: 'atlas-grip', title: 'Drag to move', onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'move', id: state.selected }); } }, '⠿ '),
+      h('span', { class: 'atlas-grip', title: t('drag_to_move'), onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'move', id: state.selected }); } }, '⠿ '),
       h('span', { class: 'atlas-box__label' }, f ? label(f.node.type) : ''),
-      h('button', { title: 'Move up', onclick: function () { moveSelected(-1); } }, '↑'),
-      h('button', { title: 'Move down', onclick: function () { moveSelected(1); } }, '↓'),
-      f && f.parent ? h('button', { title: 'Select parent', onclick: function () { select(f.parent.id); } }, '↰') : null,
-      h('button', { title: 'Duplicate', onclick: duplicateSelected }, '⧉'),
-      h('button', { title: 'Delete', onclick: deleteSelected }, '✕')));
+      h('button', { title: t('move_up'), onclick: function () { moveSelected(-1); } }, '↑'),
+      h('button', { title: t('move_down'), onclick: function () { moveSelected(1); } }, '↓'),
+      f && f.parent ? h('button', { title: t('select_parent'), onclick: function () { select(f.parent.id); } }, '↰') : null,
+      h('button', { title: t('duplicate'), onclick: duplicateSelected }, '⧉'),
+      h('button', { title: t('delete'), onclick: deleteSelected }, '✕')));
   }
 
   /* ---------------------------------------------------------- drag & drop */
@@ -700,31 +940,35 @@
   }
 
   /* ------------------------------------------------------------ save etc. */
+  function metaPayload() {
+    var m = state.page.meta;
+    return { description: m.description || null, theme: m.theme || null, theme_toggle: m.theme_toggle == null ? null : !!m.theme_toggle, accent: m.accent || null, accent_dark: m.accent_dark || null, font: m.font || null, heading_font: m.heading_font || null, og_image: m.og_image || null, titles: m.titles || {}, descriptions: m.descriptions || {} };
+  }
   function payload() {
     var p = state.page;
-    return { title: p.title, slug: p.slug, status: p.status, content: state.tree, css: p.css, js: p.js, head: p.head, meta: { description: p.meta.description || null } };
+    return { title: p.title, slug: p.slug, status: p.status, content: state.tree, css: p.css, js: p.js, head: p.head, meta: metaPayload() };
   }
   function save() {
     if (state.saving) return Promise.resolve(false);
     state.saving = true;
     els.save.disabled = true;
-    setStatus('Saving…');
+    setStatus(t('saving'));
     return api(cfg.urls.save, 'PUT', payload()).then(function (r) {
       return r.json().then(function (j) { return { ok: r.ok, j: j }; });
     }).then(function (r) {
       if (!r.ok) {
-        var msg = r.j.message || 'Save failed';
+        var msg = r.j.message || t('save_failed');
         if (r.j.errors) msg = r.j.errors[Object.keys(r.j.errors)[0]][0];
-        toast(msg, true); setStatus('Not saved');
+        toast(msg, true); setStatus(t('not_saved'));
         return false;
       }
       state.dirty = false;
       state.page.slug = r.j.slug;
       els.slug.value = r.j.slug;
       els.viewLink.href = r.j.url;
-      setStatus('Saved'); toast('Saved');
+      setStatus(t('saved')); toast(t('saved'));
       return true;
-    }).catch(function () { toast('Save failed — network error', true); setStatus('Not saved'); return false; })
+    }).catch(function () { toast(t('save_failed'), true); setStatus(t('not_saved')); return false; })
       .then(function (ok) { state.saving = false; els.save.disabled = false; return ok; });
   }
   function preview() {
@@ -733,7 +977,7 @@
     if (state.dirty) save().then(go); else go(true);
   }
   function leaveGuard(e) {
-    if (state.dirty && !confirm('You have unsaved changes. Leave anyway?')) e.preventDefault();
+    if (state.dirty && !confirm(t('unsaved_confirm'))) e.preventDefault();
   }
   window.addEventListener('beforeunload', function (e) { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
 

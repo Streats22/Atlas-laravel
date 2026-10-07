@@ -2,40 +2,23 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 
-class Spacer extends Block
+class Spacer extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'spacer';
-    }
+    protected string $type = 'spacer';
 
-    public function label(): string
-    {
-        return 'Spacer';
-    }
+    protected string $label = 'Spacer';
 
-    public function icon(): string
-    {
-        return '↕';
-    }
+    protected string $icon = '↕';
 
-    public function category(): string
-    {
-        return 'Layout';
-    }
-
-    public function view(): string
-    {
-        return 'atlas::blocks.spacer';
-    }
+    protected string $category = 'Layout';
 
     public function fields(): array
     {
         return [
             Field::number('height', 'Height (px)', 40),
+            Field::number('height_mobile', 'Height on mobile (px)', 24),
         ];
     }
 }

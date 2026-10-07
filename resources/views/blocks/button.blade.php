@@ -1,9 +1,12 @@
 @php
-    $color = $props['color'] ?: '#4f46e5';
-    $style = ($props['style'] ?? 'solid') === 'outline'
-        ? "border:2px solid {$color};color:{$color};background:transparent;"
-        : "border:2px solid {$color};background:{$color};color:#fff;";
+    $color = $props['color'] ?? '';
+    $isHex = is_string($color) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $color);
+    $style = $isHex ? '--btn:'.$color.';--btn-fg:'.\Atlas\Support\Theme::contrast($color).';' : '';
+    $variant = in_array($props['style'] ?? 'solid', ['solid', 'outline', 'ghost'], true) ? $props['style'] : 'solid';
+    $size = in_array($props['size'] ?? 'md', ['sm', 'md', 'lg'], true) ? $props['size'] : 'md';
+    $align = in_array($props['align'] ?? 'left', ['left', 'center', 'right'], true) ? $props['align'] : 'left';
+    $href = $safe($props['url'] ?? '#') ?: '#';
 @endphp
-<div class="atlas-button-wrap" style="text-align:{{ $props['align'] ?? 'left' }}">
-    <a class="atlas-button" href="{{ $href }}" @if($props['new_tab'] ?? false) target="_blank" rel="noopener noreferrer" @endif style="display:inline-block;padding:.7em 1.4em;border-radius:6px;text-decoration:none;font-weight:600;{{ $style }}">{{ $props['label'] ?? '' }}</a>
+<div class="atlas-btn-wrap atlas-align-{{ $align }}">
+    <a class="atlas-btn atlas-btn--{{ $variant }} atlas-btn--{{ $size }}" href="{{ $href }}" @if($props['new_tab'] ?? false) target="_blank" rel="noopener noreferrer" @endif @if($style) style="{{ $style }}" @endif>{{ $props['label'] ?? '' }}@if(filled($props['icon'] ?? null)) <span aria-hidden="true">{{ $props['icon'] }}</span>@endif</a>
 </div>

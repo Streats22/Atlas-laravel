@@ -1,4 +1,5 @@
-{{-- Available: $props, $children, $node, $id, $domId, $editing --}}
-<div class="{{ $domId }}-inner">
+{{-- Available: $props, $children, $node, $id, $domId, $editing, $locale, $safe(url) --}}
+<div class="atlas-{{ type }}" style="text-align: {{ $props['align'] }}">
     <h3>{{ $props['title'] }}</h3>
+    @if(filled($props['body']))<p>{!! nl2br(e($props['body'])) !!}</p>@endif{{ children }}
 </div>

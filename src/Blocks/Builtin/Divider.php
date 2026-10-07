@@ -2,41 +2,25 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 
-class Divider extends Block
+class Divider extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'divider';
-    }
+    protected string $type = 'divider';
 
-    public function label(): string
-    {
-        return 'Divider';
-    }
+    protected string $label = 'Divider';
 
-    public function icon(): string
-    {
-        return '—';
-    }
+    protected string $icon = '—';
 
-    public function category(): string
-    {
-        return 'Layout';
-    }
-
-    public function view(): string
-    {
-        return 'atlas::blocks.divider';
-    }
+    protected string $category = 'Layout';
 
     public function fields(): array
     {
         return [
-            Field::color('color', 'Colour', '#d1d5db'),
+            Field::select('style', ['solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted', 'gradient' => 'Gradient'], 'Style', 'solid'),
+            Field::color('color', 'Colour'),
             Field::number('thickness', 'Thickness (px)', 1),
+            Field::number('width', 'Width (%)', 100, ['min' => 5, 'max' => 100]),
             Field::number('margin', 'Vertical margin (px)', 16),
         ];
     }

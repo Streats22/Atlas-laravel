@@ -2,48 +2,32 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 
-class Section extends Block
+class Section extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'section';
-    }
+    protected string $type = 'section';
 
-    public function label(): string
-    {
-        return 'Section';
-    }
+    protected string $label = 'Section';
 
-    public function icon(): string
-    {
-        return '▭';
-    }
+    protected string $icon = '▭';
 
-    public function category(): string
-    {
-        return 'Layout';
-    }
+    protected string $category = 'Layout';
 
-    public function view(): string
-    {
-        return 'atlas::blocks.section';
-    }
-
-    public function container(): bool
-    {
-        return true;
-    }
+    protected bool $container = true;
 
     public function fields(): array
     {
         return [
-            Field::color('background', 'Background'),
-            Field::number('padding', 'Vertical padding (px)', 48),
-            Field::number('max_width', 'Max width (px)', 1100),
-            Field::checkbox('full_width', 'Full-width content'),
+            Field::select('tone', ['none' => 'None', 'surface' => 'Surface', 'accent' => 'Accent', 'inverted' => 'Inverted'], 'Tone', 'none'),
+            Field::color('background', 'Background colour'),
+            Field::image('bg_image', 'Background image'),
+            Field::number('overlay', 'Image overlay (%)', 0, ['min' => 0, 'max' => 90]),
+            Field::checkbox('parallax', 'Parallax background'),
+            Field::number('padding_y', 'Vertical padding (px)', 56),
+            Field::select('max_width', ['narrow' => 'Narrow (720px)', 'normal' => 'Normal (1100px)', 'wide' => 'Wide (1400px)', 'full' => 'Full width'], 'Content width', 'normal'),
+            Field::number('min_height', 'Minimum height (px)', 0),
+            Field::select('valign', ['start' => 'Top', 'center' => 'Middle', 'end' => 'Bottom'], 'Vertical align', 'start'),
         ];
     }
 }

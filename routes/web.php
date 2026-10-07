@@ -1,5 +1,6 @@
 <?php
 
+use Atlas\Http\Controllers\BlockController;
 use Atlas\Http\Controllers\PageController;
 use Atlas\Http\Controllers\RenderController;
 use Atlas\Http\Controllers\UploadController;
@@ -14,3 +15,7 @@ Route::delete('pages/{page}', [PageController::class, 'destroy'])->name('pages.d
 Route::put('api/pages/{page}', [PageController::class, 'update'])->name('api.pages.update');
 Route::post('api/render', RenderController::class)->name('api.render');
 Route::post('api/upload', UploadController::class)->name('api.upload');
+
+Route::post('api/blocks', [BlockController::class, 'store'])->name('api.blocks.store');
+Route::put('api/blocks/{block}', [BlockController::class, 'update'])->name('api.blocks.update');
+Route::delete('api/blocks/{block}', [BlockController::class, 'destroy'])->name('api.blocks.destroy');

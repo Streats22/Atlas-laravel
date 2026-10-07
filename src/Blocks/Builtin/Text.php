@@ -2,43 +2,32 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
+use Illuminate\Support\Str;
 
-class Text extends Block
+class Text extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'text';
-    }
+    protected string $type = 'text';
 
-    public function label(): string
-    {
-        return 'Text';
-    }
+    protected string $label = 'Text';
 
-    public function icon(): string
-    {
-        return '¶';
-    }
+    protected string $icon = '¶';
 
-    public function category(): string
-    {
-        return 'Content';
-    }
-
-    public function view(): string
-    {
-        return 'atlas::blocks.text';
-    }
+    protected string $category = 'Content';
 
     public function fields(): array
     {
         return [
-            Field::textarea('text', 'Text', 'Write something wonderful. Line breaks are kept.'),
-            Field::select('align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'], 'Align', 'left'),
+            Field::t(Field::textarea('text', 'Text (Markdown supported)', "Write something **wonderful**. Markdown works: *italic*, [links](https://example.com), lists…")),
+            Field::select('align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right', 'justify' => 'Justify'], 'Align', 'left'),
+            Field::select('size', ['sm' => 'Small', 'md' => 'Normal', 'lg' => 'Large', 'xl' => 'Lead'], 'Size', 'md'),
             Field::color('color', 'Colour'),
-            Field::number('size', 'Font size (px)', 17),
+            Field::checkbox('readable', 'Readable line length', true),
         ];
+    }
+
+    public function data(array $props): array
+    {
+        return ['html' => Str::markdown((string) ($props['text'] ?? ''), ['html_input' => 'strip', 'allow_unsafe_links' => false])];
     }
 }

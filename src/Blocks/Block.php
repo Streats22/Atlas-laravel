@@ -2,6 +2,7 @@
 
 namespace Atlas\Blocks;
 
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -16,7 +17,7 @@ abstract class Block
 
     public function label(): string
     {
-        return Str::headline($this->type());
+        return $this->trans('label', Str::headline($this->type()));
     }
 
     /** Group shown in the block palette. */
@@ -58,15 +59,27 @@ abstract class Block
     /** Default property values derived from the field definitions. */
     public function defaults(): array
     {
-        $defaults = [];
-        foreach ($this->fields() as $field) {
-            $defaults[$field['name']] = $field['default'] ?? null;
-        }
-
-        return $defaults;
+        return Field::defaults($this->fields());
     }
 
-    /** Extra variables for the view. Props arrive already merged with defaults. */
+    /**
+     * Assets this block needs on any page that uses it:
+     * ['styles' => ['https://…css'], 'scripts' => ['https://…js' | ['src' => …, 'defer' => true]]]
+     */
+    public function assets(): array
+    {
+        return [];
+    }
+
+    /** Look up a translated string for this block, falling back to $fallback. */
+    protected function trans(string $key, string $fallback): string
+    {
+        $full = "atlas::blocks.{$this->type()}.{$key}";
+
+        return Lang::has($full) ? __($full) : $fallback;
+    }
+
+    /** Extra variables for the view. Props arrive already merged with defaults and localized. */
     public function data(array $props): array
     {
         return [];
@@ -85,6 +98,8 @@ abstract class Block
             'children' => $children,
             'node' => $node,
             'id' => $node['id'] ?? null,
+            'safe' => fn ($url) => \Atlas\Support\Url::safe($url),
+            'locale' => app()->getLocale(),
             'domId' => $node['dom_id'] ?? 'atlas-'.($node['id'] ?? ''),
             'editing' => $editing,
         ], $this->data($props)))->render();
@@ -102,10 +117,10 @@ abstract class Block
         return [
             'type' => $this->type(),
             'label' => $this->label(),
-            'category' => $this->category(),
+            'category' => Lang::has('atlas::categories.'.$this->category()) ? __('atlas::categories.'.$this->category()) : $this->category(),
             'icon' => $this->icon(),
             'container' => $this->container(),
-            'fields' => $this->fields(),
+            'fields' => array_map(fn ($f) => Field::localize($f, $this->type()), $this->fields()),
             'template' => $template,
         ];
     }

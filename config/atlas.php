@@ -27,6 +27,7 @@ return [
         'prefix' => '',
         'middleware' => ['web'],
         'home' => 'home',
+        'locale_prefix' => false,
     ],
 
     /*
@@ -85,6 +86,48 @@ return [
     'assets' => [
         'styles' => [],
         'scripts' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Locales (translations)
+    |--------------------------------------------------------------------------
+    | Content locales editors can translate into: code => native name. With more
+    | than one locale the editor shows a language switcher and every
+    | "translatable" field can hold one value per locale. The default locale's
+    | value is the fallback. `locale_prefix` (under `frontend`) serves
+    | non-default locales at /{locale}/{slug}; otherwise ?lang=xx is used.
+    */
+    'locales' => [],
+    'default_locale' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Theme (light / dark mode)
+    |--------------------------------------------------------------------------
+    | Defaults for every page; each page can override them in the editor.
+    | mode: auto (follow the visitor's system) | light | dark
+    | toggle: show a floating light/dark switch for visitors
+    | light / dark: override any design token, e.g. ['bg' => '#fff', 'text' => '#111']
+    */
+    'theme' => [
+        'default' => 'auto',
+        'toggle' => false,
+        'accent' => '#4f46e5',
+        'accent_dark' => '#818cf8',
+        'font' => 'system',
+        'heading_font' => 'same',
+        'light' => [],
+        'dark' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | CDN URLs used by animated blocks
+    |--------------------------------------------------------------------------
+    */
+    'cdn' => [
+        'lottie' => 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js',
     ],
 
     /*

@@ -2,37 +2,19 @@
 
 namespace Atlas\Blocks\Builtin;
 
-use Atlas\Blocks\Block;
 use Atlas\Blocks\Field;
 use Atlas\Rendering\Renderer;
 use Illuminate\Support\HtmlString;
 
-class CustomCode extends Block
+class CustomCode extends BuiltinBlock
 {
-    public function type(): string
-    {
-        return 'custom-code';
-    }
+    protected string $type = 'custom-code';
 
-    public function label(): string
-    {
-        return 'Custom Code';
-    }
+    protected string $label = 'Custom Code';
 
-    public function icon(): string
-    {
-        return '</>';
-    }
+    protected string $icon = '</>';
 
-    public function category(): string
-    {
-        return 'Developer';
-    }
-
-    public function view(): string
-    {
-        return 'atlas::blocks.custom-code';
-    }
+    protected string $category = 'Developer';
 
     public function fields(): array
     {

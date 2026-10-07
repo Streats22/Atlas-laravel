@@ -1,1 +1,2 @@
-<hr class="atlas-divider" style="border:0;border-top:{{ (int) ($props['thickness'] ?? 1) }}px solid {{ $props['color'] ?? '#d1d5db' }};margin:{{ (int) ($props['margin'] ?? 16) }}px 0">
+@php $style = in_array($props['style'] ?? 'solid', ['solid', 'dashed', 'dotted', 'gradient'], true) ? $props['style'] : 'solid'; @endphp
+<hr class="atlas-divider atlas-divider--{{ $style }}" style="--t:{{ max(1, (int) ($props['thickness'] ?? 1)) }}px;--m:{{ (int) ($props['margin'] ?? 16) }}px;--w:{{ min(100, max(5, (int) ($props['width'] ?? 100))) }}%;@if(!empty($props['color']))--c:{{ $props['color'] }};@endif">

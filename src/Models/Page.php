@@ -45,11 +45,9 @@ class Page extends Model
             && ($this->published_at === null || $this->published_at->isPast());
     }
 
-    public function url(): string
+    public function url(?string $locale = null): string
     {
-        $prefix = trim((string) config('atlas.frontend.prefix'), '/');
-
-        return url(trim($prefix.'/'.$this->slug, '/'));
+        return \Atlas\Support\Locales::url($this, $locale ?? \Atlas\Support\Locales::default());
     }
 
     /** The block tree rendered to HTML (no layout). */

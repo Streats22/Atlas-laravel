@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Tests\Feature;
 
 use Atlas\Blocks\Block;
@@ -47,7 +49,7 @@ class RenderingTest extends TestCase
     {
         $html = (string) Atlas::renderer()->render([
             ['id' => 'c', 'type' => 'columns', 'props' => [], 'children' => [
-                ['id' => 't1', 'type' => 'text', 'props' => ['text' => "**bold** and [safe](https://example.com) [bad](javascript:alert(1))"], 'children' => []],
+                ['id' => 't1', 'type' => 'text', 'props' => ['text' => '**bold** and [safe](https://example.com) [bad](javascript:alert(1))'], 'children' => []],
             ]],
         ]);
 
@@ -105,12 +107,24 @@ class RenderingTest extends TestCase
 
     public function test_developer_blocks_run_custom_php_and_views(): void
     {
-        View::addNamespace('t', __DIR__.'/../views');
-        Atlas::block(new class extends Block {
-            public function type(): string { return 'greeter'; }
-            public function view(): string { return 't::greeter'; }
-            public function fields(): array { return [Field::text('who', 'Who', 'world')]; }
-            public function data(array $props): array { return ['shout' => strtoupper($props['who'])]; }
+        View::addNamespace('t', __DIR__ . '/../views');
+        Atlas::block(new class () extends Block {
+            public function type(): string
+            {
+                return 'greeter';
+            }
+            public function view(): string
+            {
+                return 't::greeter';
+            }
+            public function fields(): array
+            {
+                return [Field::text('who', 'Who', 'world')];
+            }
+            public function data(array $props): array
+            {
+                return ['shout' => strtoupper($props['who'])];
+            }
         });
 
         $html = (string) Atlas::renderer()->render([['id' => 'g', 'type' => 'greeter', 'props' => ['who' => 'atlas'], 'children' => []]]);
@@ -121,7 +135,7 @@ class RenderingTest extends TestCase
 
     public function test_view_block_helper(): void
     {
-        View::addNamespace('t', __DIR__.'/../views');
+        View::addNamespace('t', __DIR__ . '/../views');
         Atlas::viewBlock('hero', 't::hero', 'Hero', [Field::text('title', 'Title', 'Hi')]);
 
         $html = (string) Atlas::renderer()->render([['id' => 'h', 'type' => 'hero', 'props' => [], 'children' => []]]);
@@ -130,9 +144,15 @@ class RenderingTest extends TestCase
 
     public function test_a_broken_block_does_not_break_the_page(): void
     {
-        Atlas::block(new class extends Block {
-            public function type(): string { return 'boom'; }
-            public function render(array $props, \Illuminate\Support\HtmlString $children, array $node, bool $editing): string { throw new \RuntimeException('kaboom'); }
+        Atlas::block(new class () extends Block {
+            public function type(): string
+            {
+                return 'boom';
+            }
+            public function render(array $props, \Illuminate\Support\HtmlString $children, array $node, bool $editing): string
+            {
+                throw new \RuntimeException('kaboom');
+            }
         });
         $nodes = [
             ['id' => 'b', 'type' => 'boom', 'props' => [], 'children' => []],

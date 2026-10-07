@@ -1,19 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas;
 
 use Atlas\Blocks\Block;
 use Atlas\Blocks\BlockRegistry;
 use Atlas\Blocks\Builtin;
 use Atlas\Blocks\DbBlock;
-use Atlas\Models\CustomBlock;
-use Atlas\Support\Locales;
-use Atlas\Console\InstallCommand;
-use Atlas\Console\MakeBlockCommand;
 use Atlas\Console\DemoCommand;
+use Atlas\Console\ExportCommand;
+use Atlas\Console\ImportCommand;
+use Atlas\Console\InstallCommand;
 use Atlas\Console\ListBlocksCommand;
+use Atlas\Console\MakeBlockCommand;
+use Atlas\Console\PackageCommand;
 use Atlas\Http\Controllers\FrontendController;
 use Atlas\Http\Middleware\Authorize;
+use Atlas\Models\CustomBlock;
+use Atlas\Packaging\MediaUrls;
+use Atlas\Support\Locales;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
@@ -25,11 +31,12 @@ class AtlasServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/atlas.php', 'atlas');
+        $this->mergeConfigFrom(__DIR__ . '/../config/atlas.php', 'atlas');
 
         $this->app->singleton(BlockRegistry::class);
         $this->app->singleton(Atlas::class, fn ($app) => new Atlas($app->make(BlockRegistry::class)));
         $this->app->alias(Atlas::class, 'atlas');
+        $this->app->singleton(MediaUrls::class, fn () => MediaUrls::fromConfig());
     }
 
     public function boot(): void
@@ -39,9 +46,9 @@ class AtlasServiceProvider extends ServiceProvider
             config(['atlas.default_locale' => config('app.locale', 'en')]);
         }
 
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'atlas');
-        $this->loadTranslationsFrom(__DIR__.'/../lang', 'atlas');
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'atlas');
+        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'atlas');
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         Blade::componentNamespace('Atlas\\View\\Components', 'atlas');
 
         // Secure by default: only the local environment may use the editor
@@ -54,12 +61,12 @@ class AtlasServiceProvider extends ServiceProvider
         $this->registerRoutes();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([InstallCommand::class, MakeBlockCommand::class, ListBlocksCommand::class, DemoCommand::class]);
+            $this->commands([InstallCommand::class, MakeBlockCommand::class, ListBlocksCommand::class, DemoCommand::class, ExportCommand::class, ImportCommand::class, PackageCommand::class]);
 
-            $this->publishes([__DIR__.'/../config/atlas.php' => config_path('atlas.php')], 'atlas-config');
-            $this->publishes([__DIR__.'/../resources/views' => resource_path('views/vendor/atlas')], 'atlas-views');
-            $this->publishes([__DIR__.'/../lang' => $this->app->langPath('vendor/atlas')], 'atlas-lang');
-            $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'atlas-migrations');
+            $this->publishes([__DIR__ . '/../config/atlas.php' => config_path('atlas.php')], 'atlas-config');
+            $this->publishes([__DIR__ . '/../resources/views' => resource_path('views/vendor/atlas')], 'atlas-views');
+            $this->publishes([__DIR__ . '/../lang' => $this->app->langPath('vendor/atlas')], 'atlas-lang');
+            $this->publishes([__DIR__ . '/../database/migrations' => database_path('migrations')], 'atlas-migrations');
         }
     }
 
@@ -112,7 +119,7 @@ class AtlasServiceProvider extends ServiceProvider
     protected function discoverBlocks(Atlas $atlas): void
     {
         $path = config('atlas.discover.path') ?? app_path('Atlas/Blocks');
-        $namespace = config('atlas.discover.namespace') ?? $this->app->getNamespace().'Atlas\\Blocks';
+        $namespace = config('atlas.discover.namespace') ?? $this->app->getNamespace() . 'Atlas\\Blocks';
 
         if (! is_dir($path)) {
             return;
@@ -120,7 +127,7 @@ class AtlasServiceProvider extends ServiceProvider
 
         foreach (File::allFiles($path) as $file) {
             $relative = str_replace(['/', '.php'], ['\\', ''], $file->getRelativePathname());
-            $class = rtrim($namespace, '\\').'\\'.$relative;
+            $class = rtrim($namespace, '\\') . '\\' . $relative;
 
             if (class_exists($class)
                 && is_subclass_of($class, Block::class)
@@ -141,7 +148,7 @@ class AtlasServiceProvider extends ServiceProvider
             Route::get('assets/{file}', [Http\Controllers\AssetController::class, 'show'])
                 ->where('file', 'atlas\.(js|css)')->name('asset');
 
-            Route::middleware(Authorize::class)->group(__DIR__.'/../routes/web.php');
+            Route::middleware(Authorize::class)->group(__DIR__ . '/../routes/web.php');
         });
 
         // Registered after every other route so the app always wins.
@@ -157,9 +164,9 @@ class AtlasServiceProvider extends ServiceProvider
                 $others = array_map('preg_quote', array_values(array_diff(array_keys(Locales::available()), [Locales::default()])));
                 if (Locales::prefixed() && $others) {
                     $pattern = implode('|', $others);
-                    Route::get(trim($prefix.'/{locale}', '/'), [FrontendController::class, 'homeLocale'])
+                    Route::get(trim($prefix . '/{locale}', '/'), [FrontendController::class, 'homeLocale'])
                         ->where('locale', $pattern)->name('atlas.home.locale');
-                    Route::get(trim($prefix.'/{locale}/{slug}', '/'), [FrontendController::class, 'showLocale'])
+                    Route::get(trim($prefix . '/{locale}/{slug}', '/'), [FrontendController::class, 'showLocale'])
                         ->where('locale', $pattern)->where('slug', '[a-z0-9]+(?:[\-\/][a-z0-9]+)*')->name('atlas.page.locale');
                 }
 
@@ -167,7 +174,7 @@ class AtlasServiceProvider extends ServiceProvider
                     Route::get('/', [FrontendController::class, 'home'])->name('atlas.home');
                 }
 
-                Route::get(trim($prefix.'/{slug}', '/'), [FrontendController::class, 'show'])
+                Route::get(trim($prefix . '/{slug}', '/'), [FrontendController::class, 'show'])
                     ->where('slug', '[a-z0-9]+(?:[\-\/][a-z0-9]+)*')
                     ->name('atlas.page');
             });

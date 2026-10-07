@@ -7,7 +7,7 @@
         return $href !== '' ? '<a href="'.e($href).'" rel="noopener">'.$inner.'</a>' : '<span>'.$inner.'</span>';
     };
     $gray = $props['grayscale'] ?? true;
-    $height = (int) ($props['height'] ?? 40);
+    $height = $int($props['height'] ?? null, 40);
     $repeat = max(1, (int) ceil(8 / max(1, count($items))));
 @endphp
 @if($props['marquee'] ?? false)

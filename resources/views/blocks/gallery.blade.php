@@ -1,7 +1,7 @@
 @php
-    $ratio = ($props['ratio'] ?? '1/1') === 'auto' ? 'auto' : (preg_match('/^\d+\/\d+$/', $props['ratio'] ?? '') ? $props['ratio'] : '1/1');
+    $ratio = ($props['ratio'] ?? '1/1') === 'auto' ? 'auto' : ($aspect($props['ratio'] ?? null, '1/1'));
 @endphp
-<div class="atlas-gallery" style="--cols:{{ min(5, max(2, (int) ($props['columns'] ?? 3))) }};--gap:{{ (int) ($props['gap'] ?? 12) }}px;--ratio:{{ $ratio }}" data-atlas-rt>
+<div class="atlas-gallery" style="--cols:{{ min(5, max(2, $int($props['columns'] ?? null, 3))) }};--gap:{{ $int($props['gap'] ?? null, 12) }}px;--ratio:{{ $ratio }}" data-atlas-rt>
     @foreach(($props['items'] ?? []) as $item)
         @php($img = $safe($item['image'] ?? ''))
         <figure>

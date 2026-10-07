@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks\Builtin;
 
 use Atlas\Blocks\Field;
@@ -18,7 +20,7 @@ class Text extends BuiltinBlock
     public function fields(): array
     {
         return [
-            Field::t(Field::textarea('text', 'Text (Markdown supported)', "Write something **wonderful**. Markdown works: *italic*, [links](https://example.com), lists…")),
+            Field::t(Field::textarea('text', 'Text (Markdown supported)', 'Write something **wonderful**. Markdown works: *italic*, [links](https://example.com), lists…')),
             Field::select('align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right', 'justify' => 'Justify'], 'Align', 'left'),
             Field::select('size', ['sm' => 'Small', 'md' => 'Normal', 'lg' => 'Large', 'xl' => 'Lead'], 'Size', 'md'),
             Field::color('color', 'Colour'),

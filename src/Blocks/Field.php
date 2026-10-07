@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks;
 
 use Illuminate\Support\Facades\Lang;
@@ -29,7 +31,7 @@ class Field
         return self::make('textarea', $name, $label, $default);
     }
 
-    public static function number(string $name, ?string $label = null, int|float $default = 0, array $extra = []): array
+    public static function number(string $name, ?string $label = null, int|float|null $default = 0, array $extra = []): array
     {
         return self::make('number', $name, $label, $default, $extra);
     }

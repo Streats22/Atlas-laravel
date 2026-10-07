@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'text' => 'Tekst', 'title' => 'Titel', 'eyebrow' => 'Bovenkop (klein)', 'alt' => 'Alt-tekst', 'caption' => 'Bijschrift', 'label' => 'Label', 'url' => 'Link',
     'link' => 'Link', 'src' => 'Afbeelding', 'image' => 'Afbeelding', 'width' => 'Breedte', 'ratio' => 'Beeldverhouding', 'fit' => 'Passing', 'radius' => 'Hoekafronding (px)',

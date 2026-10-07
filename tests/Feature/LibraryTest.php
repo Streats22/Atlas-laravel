@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Tests\Feature;
 
 use Atlas\Facades\Atlas;
 use Atlas\Models\CustomBlock;
 use Atlas\Models\Page;
+use Atlas\Support\PageMeta;
 use Atlas\Support\Template;
 use Atlas\Support\Theme;
 use Atlas\Tests\TestCase;
@@ -17,10 +20,10 @@ class LibraryTest extends TestCase
         $tpl = Atlas::blocks()->get($type)->toDefinition()['template'];
 
         return [
-            'id' => 'n'.substr(md5($type), 0, 6),
+            'id' => 'n' . substr(md5($type), 0, 6),
             'type' => $type,
             'props' => array_merge((array) $tpl['props'], $props),
-            'children' => array_map(fn ($c) => ['id' => 'c'.substr(md5(json_encode($c)), 0, 6), 'type' => $c['type'], 'props' => (array) ($c['props'] ?? []), 'children' => []], $tpl['children']),
+            'children' => array_map(fn ($c) => ['id' => 'c' . substr(md5(json_encode($c)), 0, 6), 'type' => $c['type'], 'props' => (array) ($c['props'] ?? []), 'children' => []], $tpl['children']),
         ];
     }
 
@@ -36,8 +39,8 @@ class LibraryTest extends TestCase
         foreach ($types as $type) {
             foreach ([false, true] as $editing) {
                 $html = (string) Atlas::renderer()->render([$this->node($type)], $editing);
-                $this->assertStringNotContainsString('atlas-error', $html, "{$type} failed (editing=".json_encode($editing).')');
-                $this->assertStringContainsString('atlas-b-'.$type, $html, "{$type} missing wrapper");
+                $this->assertStringNotContainsString('atlas-error', $html, "{$type} failed (editing=" . json_encode($editing) . ')');
+                $this->assertStringContainsString('atlas-b-' . $type, $html, "{$type} missing wrapper");
             }
         }
     }
@@ -86,15 +89,15 @@ class LibraryTest extends TestCase
 
     public function test_theme_css_and_modes(): void
     {
-        $auto = Theme::css(Theme::settings());
+        $auto = Theme::default()->css();
         $this->assertStringContainsString('prefers-color-scheme: dark', $auto);
         $this->assertStringContainsString('--atlas-accent:#4f46e5', $auto);
 
-        $dark = Theme::css(Theme::settings(['theme' => 'dark', 'accent_dark' => '#00ff88']));
+        $dark = Theme::fromMeta(PageMeta::from(['theme' => 'dark', 'accent_dark' => '#00ff88']))->css();
         $this->assertStringContainsString('--atlas-accent:#00ff88', $dark);
         $this->assertStringNotContainsString('prefers-color-scheme', $dark);
 
-        $light = Theme::css(Theme::settings(['theme' => 'light', 'accent' => 'not-a-colour']));
+        $light = Theme::fromMeta(PageMeta::from(['theme' => 'light', 'accent' => 'not-a-colour']))->css();
         $this->assertStringContainsString('--atlas-accent:#4f46e5', $light); // invalid colour ignored
         $this->assertSame('#ffffff', Theme::contrast('#4f46e5'));
         $this->assertSame('#0f172a', Theme::contrast('#ffeeaa'));
@@ -286,7 +289,7 @@ class LibraryTest extends TestCase
         $this->assertStringContainsString("return 'Marketing';", $src);
         $this->assertStringContainsString('return true;', $src);
         $this->assertStringContainsString('$children', file_get_contents($view));
-        exec('php -l '.escapeshellarg($class), $out, $code);
+        exec('php -l ' . escapeshellarg($class), $out, $code);
         $this->assertSame(0, $code);
 
         \Illuminate\Support\Facades\File::delete([$class, $view]);

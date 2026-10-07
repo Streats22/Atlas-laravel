@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks\Builtin;
 
 use Atlas\Blocks\Field;
@@ -28,7 +30,7 @@ class CustomCode extends BuiltinBlock
 
     public function render(array $props, HtmlString $children, array $node, bool $editing): string
     {
-        $domId = $node['dom_id'] ?? 'atlas-'.($node['id'] ?? '');
+        $domId = $node['dom_id'] ?? 'atlas-' . ($node['id'] ?? '');
         $props['css'] = Renderer::scopeCss((string) ($props['css'] ?? ''), $domId);
 
         return parent::render($props, $children, $node, $editing);

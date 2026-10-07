@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas;
 
 use Atlas\Blocks\Block;
@@ -19,7 +21,9 @@ class Atlas
 
     protected ?Renderer $renderer = null;
 
-    public function __construct(protected BlockRegistry $registry) {}
+    public function __construct(protected BlockRegistry $registry)
+    {
+    }
 
     public function blocks(): BlockRegistry
     {

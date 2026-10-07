@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Support;
 
 use Atlas\Models\Page;
@@ -54,7 +56,7 @@ class Locales
         $url = url(trim(implode('/', array_filter([...$segments, $page->slug])), '/'));
 
         if (! self::prefixed() && $locale !== self::default()) {
-            $url .= '?lang='.$locale;
+            $url .= '?lang=' . $locale;
         }
 
         return $url;

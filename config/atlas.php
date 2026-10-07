@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
 
     /*
@@ -102,7 +104,7 @@ return [
     'locales' => array_column(
         array_map(fn ($pair) => array_pad(explode(':', $pair, 2), 2, ''), array_filter(explode(',', (string) env('ATLAS_LOCALES', '')))),
         1,
-        0
+        0,
     ),
     'default_locale' => null,
 

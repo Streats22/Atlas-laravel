@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +11,7 @@ class CustomBlock extends Model
 {
     protected $table = 'atlas_blocks';
 
-    protected $guarded = [];
+    protected $fillable = ['type', 'label', 'category', 'icon', 'container', 'fields', 'html', 'css', 'js'];
 
     protected function casts(): array
     {

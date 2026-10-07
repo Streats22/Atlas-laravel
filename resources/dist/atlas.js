@@ -421,6 +421,7 @@
       h('div', { class: 'atlas-field atlas-field--check' }, h('label', null, (function () { var c = h('input', { type: 'checkbox', onchange: function (e) { meta.theme_toggle = e.target.checked; markDirty(); } }); c.checked = meta.theme_toggle != null ? !!meta.theme_toggle : !!th.toggle; return c; })(), t('show_toggle'))),
       field(t('accent'), color('accent', th.accent)),
       field(t('accent_dark'), color('accent_dark', th.accent_dark)),
+      field(t('spacing'), sel('spacing', [['compact', t('spacing_compact')], ['comfortable', t('spacing_comfortable')], ['spacious', t('spacing_spacious')]], meta.spacing || th.spacing, function (v) { meta.spacing = v; })),
       field(t('font'), sel('font', fonts, meta.font || th.font, function (v) { meta.font = v; })),
       field(t('heading_font'), sel('heading_font', [['same', t('font_same')]].concat(fonts), meta.heading_font || th.heading_font, function (v) { meta.heading_font = v; }))
     ];
@@ -481,7 +482,7 @@
         input.value = cur;
         break;
       case 'number':
-        input = h('input', { class: 'atlas-input', type: 'number', value: cur, min: fd.min, max: fd.max, step: fd.step, oninput: function (e) { set(e.target.value === '' ? 0 : Number(e.target.value)); } });
+        input = h('input', { class: 'atlas-input', type: 'number', value: cur == null ? '' : cur, placeholder: fd.nullable ? t('theme_default') : null, min: fd.min, max: fd.max, step: fd.step, oninput: function (e) { set(e.target.value === '' ? (fd.nullable ? null : 0) : Number(e.target.value)); } });
         break;
       case 'color':
         var txt = h('input', { class: 'atlas-input', value: cur || '', placeholder: 'none', oninput: function (e) { sw.value = /^#[0-9a-f]{6}$/i.test(e.target.value) ? e.target.value : sw.value; set(e.target.value); } });
@@ -943,7 +944,7 @@
   /* ------------------------------------------------------------ save etc. */
   function metaPayload() {
     var m = state.page.meta;
-    return { description: m.description || null, theme: m.theme || null, theme_toggle: m.theme_toggle == null ? null : !!m.theme_toggle, accent: m.accent || null, accent_dark: m.accent_dark || null, font: m.font || null, heading_font: m.heading_font || null, og_image: m.og_image || null, titles: m.titles || {}, descriptions: m.descriptions || {} };
+    return { description: m.description || null, theme: m.theme || null, theme_toggle: m.theme_toggle == null ? null : !!m.theme_toggle, accent: m.accent || null, accent_dark: m.accent_dark || null, font: m.font || null, heading_font: m.heading_font || null, spacing: m.spacing || null, og_image: m.og_image || null, titles: m.titles || {}, descriptions: m.descriptions || {} };
   }
   function payload() {
     var p = state.page;

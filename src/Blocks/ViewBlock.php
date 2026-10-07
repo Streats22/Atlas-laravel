@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks;
 
 /**
@@ -17,7 +19,8 @@ class ViewBlock extends Block
         protected string $category = 'Custom',
         protected string $icon = '▢',
         protected bool $container = false,
-    ) {}
+    ) {
+    }
 
     public function type(): string
     {

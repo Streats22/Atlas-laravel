@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Console;
 
 use Illuminate\Console\Command;
@@ -20,7 +22,7 @@ class MakeBlockCommand extends Command
     {
         $class = Str::studly($this->argument('name'));
         $type = Str::kebab($class);
-        $namespace = rtrim(config('atlas.discover.namespace') ?? app()->getNamespace().'Atlas\\Blocks', '\\');
+        $namespace = rtrim(config('atlas.discover.namespace') ?? app()->getNamespace() . 'Atlas\\Blocks', '\\');
         $dir = config('atlas.discover.path') ?? app_path('Atlas/Blocks');
 
         $classPath = "{$dir}/{$class}.php";
@@ -37,7 +39,7 @@ class MakeBlockCommand extends Command
         $files->ensureDirectoryExists($dir);
         $files->ensureDirectoryExists(dirname($viewPath));
 
-        $files->put($classPath, strtr($files->get(__DIR__.'/../../stubs/block.stub'), [
+        $files->put($classPath, strtr($files->get(__DIR__ . '/../../stubs/block.stub'), [
             '{{ namespace }}' => $namespace,
             '{{ class }}' => $class,
             '{{ type }}' => $type,
@@ -46,7 +48,7 @@ class MakeBlockCommand extends Command
             '{{ icon }}' => $this->option('icon'),
             '{{ container }}' => $this->option('container') ? 'true' : 'false',
         ]));
-        $files->put($viewPath, strtr($files->get(__DIR__.'/../../stubs/block-view.stub'), ['{{ label }}' => Str::headline($class), '{{ type }}' => $type, '{{ children }}' => $this->option('container') ? "\n    <div class=\"{{ \$domId }}-children\">{!! \$children !!}</div>" : '']));
+        $files->put($viewPath, strtr($files->get(__DIR__ . '/../../stubs/block-view.stub'), ['{{ label }}' => Str::headline($class), '{{ type }}' => $type, '{{ children }}' => $this->option('container') ? "\n    <div class=\"{{ \$domId }}-children\">{!! \$children !!}</div>" : '']));
 
         $this->info("Block created: {$classPath}");
         $this->info("View created:  {$viewPath}");

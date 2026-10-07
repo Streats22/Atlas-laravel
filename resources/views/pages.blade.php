@@ -26,7 +26,7 @@
             <tr>
                 <td><a href="{{ route('atlas.pages.edit', $page) }}"><strong>{{ $page->title }}</strong></a></td>
                 <td><code>/{{ $page->slug }}</code></td>
-                <td><span class="atlas-pill atlas-pill--{{ $page->status }}">{{ __('atlas::ui.'.$page->status) }}</span></td>
+                <td><span class="atlas-pill atlas-pill--{{ $page->status->value }}">{{ $page->status->label() }}</span></td>
                 <td>{{ $page->updated_at->diffForHumans() }}</td>
                 <td class="atlas-actions">
                     <a class="atlas-btn" href="{{ route('atlas.pages.edit', $page) }}">{{ __('atlas::ui.edit') }}</a>

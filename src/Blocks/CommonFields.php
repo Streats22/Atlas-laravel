@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks;
 
 /** Properties every block gets in the inspector's "Advanced" section. */

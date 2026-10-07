@@ -1,0 +1,29 @@
+{
+    "name": "{{ name }}",
+    "description": "{{ description }}",
+    "keywords": ["laravel", "atlas", "page-builder"],
+    "license": "{{ license }}",
+    "type": "library",
+    "require": {
+        "php": "^8.3",
+        "streats22/atlas": "{{ atlas_constraint }}"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": { "{{ namespace_json }}\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "{{ namespace_json }}\\Tests\\": "tests/" }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["{{ namespace_json }}\\{{ class }}ServiceProvider"]
+        }
+    },
+    "scripts": { "test": "vendor/bin/phpunit" },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

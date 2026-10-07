@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\View\Components;
 
 use Atlas\Facades\Atlas;
@@ -13,7 +15,9 @@ use Illuminate\View\View;
  */
 class Page extends Component
 {
-    public function __construct(public ?string $slug = null, public ?PageModel $page = null) {}
+    public function __construct(public ?string $slug = null, public ?PageModel $page = null)
+    {
+    }
 
     public function render(): View|string
     {

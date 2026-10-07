@@ -1,1 +1,1 @@
-<div class="atlas-spacer" style="--h:{{ (int) ($props['height'] ?? 40) }}px;--hm:{{ (int) ($props['height_mobile'] ?? $props['height'] ?? 24) }}px" aria-hidden="true"></div>
+<div class="atlas-spacer" style="--h:{{ $int($props['height'] ?? null, 40) }}px;--hm:{{ (int) ($props['height_mobile'] ?? $props['height'] ?? 24) }}px" aria-hidden="true"></div>

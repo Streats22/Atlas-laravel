@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks;
 
+use Atlas\Support\ViewHelpers;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -38,6 +41,12 @@ abstract class Block
         return false;
     }
 
+    /** Full-bleed blocks (sections, heroes) span the page width; others sit inside the page gutters. */
+    public function fullBleed(): bool
+    {
+        return false;
+    }
+
     /** Inspector fields, built with Atlas\Blocks\Field. */
     public function fields(): array
     {
@@ -53,7 +62,7 @@ abstract class Block
     /** The Blade view used to render the block. */
     public function view(): string
     {
-        return 'atlas.blocks.'.$this->type();
+        return 'atlas.blocks.' . $this->type();
     }
 
     /** Default property values derived from the field definitions. */
@@ -87,7 +96,8 @@ abstract class Block
 
     /**
      * Render the block. Override for full control; the default renders
-     * view() with: $props, $children, $node, $id, $domId, $editing (+ data()).
+     * view() with: $props, $children, $node, $id, $domId, $editing, $locale and the
+     * helpers $safe(url), $pick(value, allowed, default), $int(value, default, min, max), $aspect(value) (+ data()).
      *
      * @param  array  $node  The raw node: id, type, props, children, dom_id
      */
@@ -98,9 +108,12 @@ abstract class Block
             'children' => $children,
             'node' => $node,
             'id' => $node['id'] ?? null,
-            'safe' => fn ($url) => \Atlas\Support\Url::safe($url),
+            'safe' => ViewHelpers::safeUrl(...),
+            'pick' => ViewHelpers::pick(...),
+            'int' => ViewHelpers::int(...),
+            'aspect' => ViewHelpers::ratio(...),
             'locale' => app()->getLocale(),
-            'domId' => $node['dom_id'] ?? 'atlas-'.($node['id'] ?? ''),
+            'domId' => $node['dom_id'] ?? 'atlas-' . ($node['id'] ?? ''),
             'editing' => $editing,
         ], $this->data($props)))->render();
     }
@@ -117,7 +130,7 @@ abstract class Block
         return [
             'type' => $this->type(),
             'label' => $this->label(),
-            'category' => Lang::has('atlas::categories.'.$this->category()) ? __('atlas::categories.'.$this->category()) : $this->category(),
+            'category' => Lang::has('atlas::categories.' . $this->category()) ? __('atlas::categories.' . $this->category()) : $this->category(),
             'icon' => $this->icon(),
             'container' => $this->container(),
             'fields' => array_map(fn ($f) => Field::localize($f, $this->type()), $this->fields()),

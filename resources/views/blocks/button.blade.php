@@ -2,9 +2,9 @@
     $color = $props['color'] ?? '';
     $isHex = is_string($color) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $color);
     $style = $isHex ? '--btn:'.$color.';--btn-fg:'.\Atlas\Support\Theme::contrast($color).';' : '';
-    $variant = in_array($props['style'] ?? 'solid', ['solid', 'outline', 'ghost'], true) ? $props['style'] : 'solid';
-    $size = in_array($props['size'] ?? 'md', ['sm', 'md', 'lg'], true) ? $props['size'] : 'md';
-    $align = in_array($props['align'] ?? 'left', ['left', 'center', 'right'], true) ? $props['align'] : 'left';
+    $variant = $pick($props['style'] ?? null, ['solid', 'outline', 'ghost'], 'solid');
+    $size = $pick($props['size'] ?? null, ['sm', 'md', 'lg'], 'md');
+    $align = $pick($props['align'] ?? null, ['left', 'center', 'right'], 'left');
     $href = $safe($props['url'] ?? '#') ?: '#';
 @endphp
 <div class="atlas-btn-wrap atlas-align-{{ $align }}">

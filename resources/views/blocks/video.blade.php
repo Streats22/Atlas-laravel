@@ -1,4 +1,4 @@
-@php $ratio = preg_match('/^\d+\/\d+$/', $props['ratio'] ?? '') ? $props['ratio'] : '16/9'; @endphp
+@php $ratio = $aspect($props['ratio'] ?? null, '16/9'); @endphp
 @if($embed || $file)
     <figure class="atlas-video">
         <div class="atlas-video__frame" style="--r:{{ $ratio }}">

@@ -1,10 +1,10 @@
 @php
-    $style = in_array($props['style'] ?? 'overlay', ['overlay', 'caption', 'minimal'], true) ? $props['style'] : 'overlay';
-    $hover = in_array($props['hover'] ?? 'zoom', ['zoom', 'lift', 'none'], true) ? $props['hover'] : 'zoom';
-    $ratio = preg_match('/^\d+\/\d+$/', $props['ratio'] ?? '') ? $props['ratio'] : '4/3';
-    $cols = min(4, max(2, (int) ($props['columns'] ?? 3)));
+    $style = $pick($props['style'] ?? null, ['overlay', 'caption', 'minimal'], 'overlay');
+    $hover = $pick($props['hover'] ?? null, ['zoom', 'lift', 'none'], 'zoom');
+    $ratio = $aspect($props['ratio'] ?? null, '4/3');
+    $cols = min(4, max(2, $int($props['columns'] ?? null, 3)));
 @endphp
-<div class="atlas-portfolio atlas-pf--{{ $style }} atlas-pf-hover--{{ $hover }}" style="--cols:{{ $cols }};--gap:{{ (int) ($props['gap'] ?? 20) }}px;--ratio:{{ $ratio }}" data-atlas-portfolio data-atlas-rt>
+<div class="atlas-portfolio atlas-pf--{{ $style }} atlas-pf-hover--{{ $hover }}" style="--cols:{{ $cols }};--gap:{{ $int($props['gap'] ?? null, 20) }}px;--ratio:{{ $ratio }}" data-atlas-portfolio data-atlas-rt>
     @if(($props['filter'] ?? true) && count($categories) > 1)
         <div class="atlas-pf__filters" role="group" aria-label="Filter">
             <button type="button" class="is-active" data-filter="*" aria-pressed="true">{{ $props['all_label'] ?? 'All' }}</button>

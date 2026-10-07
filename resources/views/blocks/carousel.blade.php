@@ -1,5 +1,5 @@
 @php $slides = array_values(array_filter(($props['slides'] ?? []), 'is_array')); @endphp
-<div class="atlas-carousel" data-atlas-carousel data-autoplay="{{ ($props['autoplay'] ?? true) ? (int) ($props['interval'] ?? 5000) : 0 }}" data-atlas-rt style="--h:{{ (int) ($props['height'] ?? 420) }}px" role="region" aria-roledescription="carousel">
+<div class="atlas-carousel" data-atlas-carousel data-autoplay="{{ ($props['autoplay'] ?? true) ? $int($props['interval'] ?? null, 5000) : 0 }}" data-atlas-rt style="--h:{{ $int($props['height'] ?? null, 420) }}px" role="region" aria-roledescription="carousel">
     <div class="atlas-carousel__track">
         @foreach($slides as $slide)
             @php($img = $safe($slide['image'] ?? ''))

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'left' => 'Links', 'center' => 'Midden', 'right' => 'Rechts', 'justify' => 'Uitgevuld', 'none' => 'Geen', 'surface' => 'Vlak', 'accent' => 'Accent', 'inverted' => 'Omgekeerd',
     'narrow' => 'Smal (720px)', 'normal' => 'Normaal (1100px)', 'wide' => 'Breed (1400px)', 'full' => 'Volledige breedte', 'start' => 'Boven', 'end' => 'Onder', 'stretch' => 'Uitrekken',

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks\Builtin;
 
 use Atlas\Blocks\Field;

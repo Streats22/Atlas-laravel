@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Atlas\Http\Controllers\BlockController;
 use Atlas\Http\Controllers\PageController;
 use Atlas\Http\Controllers\RenderController;

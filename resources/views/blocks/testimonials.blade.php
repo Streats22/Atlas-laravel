@@ -22,7 +22,7 @@
     <div class="atlas-carousel__dots" style="bottom:.4rem"></div>
 </div>
 @else
-<div class="atlas-quotes" style="--cols:{{ min(3, max(1, (int) ($props['columns'] ?? 2))) }}">
+<div class="atlas-quotes" style="--cols:{{ min(3, max(1, $int($props['columns'] ?? null, 2))) }}">
     @foreach($items as $item)
         @php($av = $safe($item['avatar'] ?? ''))
         <figure class="atlas-quote">

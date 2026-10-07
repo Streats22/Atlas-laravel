@@ -1,6 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 return [
+    'spacing' => 'Spacing', 'spacing_compact' => 'Compact', 'spacing_comfortable' => 'Comfortable', 'spacing_spacious' => 'Spacious', 'theme_default' => 'theme default',
     // Top bar
     'all_pages' => 'All pages', 'back' => '← Pages', 'page_title' => 'Page title', 'slug' => 'URL slug',
     'draft' => 'Draft', 'published' => 'Published', 'saved' => 'Saved', 'unsaved' => 'Unsaved changes',
@@ -15,7 +18,7 @@ return [
     'select_hint' => 'Select a block on the canvas to edit it.',
     'shortcuts' => 'Shortcuts: Ctrl+S save · Ctrl+Z undo · Ctrl+D duplicate · Del delete · Esc cancel',
     'duplicate' => 'Duplicate', 'delete' => 'Delete', 'move_up' => 'Move up', 'move_down' => 'Move down',
-    'select_parent' => 'Select parent', 'drag_to_move' => 'Drag to move', 'unknown_block' => 'This block type is not registered. Its data is preserved.',
+    'select_parent' => 'Select parent', 'drag_to_move' => 'Drag to move', 'unknown_type' => 'Unknown block', 'unknown_block' => 'This block type is not registered. Its data is preserved.',
     'content' => 'Content', 'advanced' => 'Advanced', 'group_animation' => 'Animation', 'group_layout' => 'Spacing & visibility', 'group_code' => 'Code & identity',
     'expand' => 'expand', 'upload' => 'Upload', 'done' => 'Done', 'cancel' => 'Cancel', 'remove' => 'Remove', 'close' => 'Close',
     'add_item' => '+ Add item', 'item' => 'Item', 'translating' => 'Editing the :locale version. Empty fields fall back to the default language.',

@@ -1,0 +1,29 @@
+# {{ name }}
+
+{{ description }}
+
+Built with [Atlas](https://github.com/streats22/atlas-laravel).
+
+## Install
+
+```bash
+composer require {{ name }}
+php artisan {{ command }}:install     # imports the bundled pages, custom blocks and media
+```
+
+Re-run with `--force` to overwrite pages/blocks that already exist. Then open the Atlas editor (`/atlas`) to edit the imported pages.
+
+## What's inside
+
+* Developer blocks (`src/Blocks`) — registered automatically with Atlas.
+* Block views (`resources/views/atlas`).
+* A content bundle (`resources/atlas/bundle.json` + `media/`).
+* Translations (`lang/`) — publish with `php artisan vendor:publish --tag={{ command }}-lang`.
+
+## Requirements
+
+PHP 8.3+, Laravel 12 or 13, `streats22/atlas`.
+
+## License
+
+{{ license }}

@@ -1,6 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 return [
+    'spacing' => 'Ruimte tussen blokken', 'spacing_compact' => 'Compact', 'spacing_comfortable' => 'Ruim', 'spacing_spacious' => 'Extra ruim', 'theme_default' => 'standaard van thema',
     'all_pages' => 'Alle pagina’s', 'back' => '← Pagina’s', 'page_title' => 'Paginatitel', 'slug' => 'URL-slug',
     'draft' => 'Concept', 'published' => 'Gepubliceerd', 'saved' => 'Opgeslagen', 'unsaved' => 'Niet-opgeslagen wijzigingen',
     'saving' => 'Opslaan…', 'not_saved' => 'Niet opgeslagen', 'undo' => 'Ongedaan maken (Ctrl+Z)', 'redo' => 'Opnieuw (Ctrl+Shift+Z)',
@@ -13,7 +16,7 @@ return [
     'select_hint' => 'Selecteer een blok op het canvas om het te bewerken.',
     'shortcuts' => 'Sneltoetsen: Ctrl+S opslaan · Ctrl+Z ongedaan · Ctrl+D dupliceren · Del verwijderen · Esc annuleren',
     'duplicate' => 'Dupliceren', 'delete' => 'Verwijderen', 'move_up' => 'Omhoog', 'move_down' => 'Omlaag',
-    'select_parent' => 'Selecteer bovenliggend blok', 'drag_to_move' => 'Sleep om te verplaatsen', 'unknown_block' => 'Dit bloktype is niet geregistreerd. De gegevens blijven bewaard.',
+    'select_parent' => 'Selecteer bovenliggend blok', 'drag_to_move' => 'Sleep om te verplaatsen', 'unknown_type' => 'Onbekend blok', 'unknown_block' => 'Dit bloktype is niet geregistreerd. De gegevens blijven bewaard.',
     'content' => 'Inhoud', 'advanced' => 'Geavanceerd', 'group_animation' => 'Animatie', 'group_layout' => 'Ruimte & zichtbaarheid', 'group_code' => 'Code & identiteit',
     'expand' => 'vergroten', 'upload' => 'Uploaden', 'done' => 'Klaar', 'cancel' => 'Annuleren', 'remove' => 'Verwijderen', 'close' => 'Sluiten',
     'add_item' => '+ Item toevoegen', 'item' => 'Item', 'translating' => 'Je bewerkt de :locale-versie. Lege velden vallen terug op de standaardtaal.',

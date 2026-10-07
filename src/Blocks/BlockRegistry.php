@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks;
 
 use InvalidArgumentException;
@@ -38,7 +40,7 @@ class BlockRegistry
     {
         if (is_string($block)) {
             if (! is_subclass_of($block, Block::class)) {
-                throw new InvalidArgumentException("[$block] must extend ".Block::class.'.');
+                throw new InvalidArgumentException("[$block] must extend " . Block::class . '.');
             }
             $block = app($block);
         }

@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }}\Console;
+
+use Atlas\Packaging\BundleArchive;
+use Atlas\Packaging\BundleImporter;
+use {{ namespace }}\{{ class }}ServiceProvider;
+use Illuminate\Console\Command;
+
+class InstallCommand extends Command
+{
+    protected $signature = '{{ command }}:install {--force : Overwrite pages and blocks that already exist}';
+
+    protected $description = 'Import the pages and custom blocks that ship with {{ name }}';
+
+    public function handle(BundleArchive $archive, BundleImporter $importer): int
+    {
+        if (! is_file({{ class }}ServiceProvider::bundlePath() . '/bundle.json')) {
+            $this->info('This package has no content bundle — nothing to import.');
+
+            return self::SUCCESS;
+        }
+
+        [$bundle, $media] = $archive->read({{ class }}ServiceProvider::bundlePath());
+        $result = $importer->import($bundle, $media, (bool) $this->option('force'));
+
+        $this->info("Pages: {$result->pagesCreated} created, {$result->pagesUpdated} updated, " . count($result->pagesSkipped) . ' skipped.');
+        $this->info("Blocks: {$result->blocksCreated} created, {$result->blocksUpdated} updated, " . count($result->blocksSkipped) . ' skipped.');
+        $this->info("Media files copied: {$result->mediaCopied}");
+
+        if ($result->pagesSkipped !== []) {
+            $this->line('Skipped (already exist, use --force to overwrite): ' . implode(', ', $result->pagesSkipped));
+        }
+
+        return self::SUCCESS;
+    }
+}

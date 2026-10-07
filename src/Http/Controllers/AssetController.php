@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Http\Controllers;
 
 class AssetController
 {
     public function show(string $file)
     {
-        $path = __DIR__.'/../../../resources/dist/'.$file;
+        $path = __DIR__ . '/../../../resources/dist/' . $file;
         abort_unless(is_file($path), 404);
 
         return response()->file($path, [

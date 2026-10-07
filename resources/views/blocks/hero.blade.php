@@ -4,10 +4,10 @@
     $primary = $safe($props['primary_url'] ?? '#') ?: '#';
     $secondary = $safe($props['secondary_url'] ?? '#') ?: '#';
 @endphp
-<section class="atlas-hero atlas-align-{{ $align }} @if($bg !== '') atlas-hero--img @elseif($props['gradient'] ?? false) atlas-hero--gradient @endif" style="min-height:{{ (int) ($props['min_height'] ?? 460) }}px">
+<section class="atlas-hero atlas-align-{{ $align }} @if($bg !== '') atlas-hero--img @elseif($props['gradient'] ?? false) atlas-hero--gradient @endif" style="min-height:{{ $int($props['min_height'] ?? null, 460) }}px">
     @if($bg !== '')
         <div class="atlas-hero__bg" style="background-image:url('{{ $bg }}')"></div>
-        <div class="atlas-hero__overlay" style="opacity:{{ min(90, (int) ($props['overlay'] ?? 45)) / 100 }}"></div>
+        <div class="atlas-hero__overlay" style="opacity:{{ min(90, $int($props['overlay'] ?? null, 45)) / 100 }}"></div>
     @endif
     <div class="atlas-hero__inner">
         @if(filled($props['eyebrow'] ?? null))<div class="atlas-eyebrow">{{ $props['eyebrow'] }}</div>@endif

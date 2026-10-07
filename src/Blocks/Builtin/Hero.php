@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks\Builtin;
 
 use Atlas\Blocks\Field;
@@ -13,6 +15,8 @@ class Hero extends BuiltinBlock
     protected string $icon = '★';
 
     protected string $category = 'Content';
+
+    protected bool $fullBleed = true;
 
     public function fields(): array
     {

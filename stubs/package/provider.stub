@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Atlas\Facades\Atlas;
+use {{ namespace }}\Console\InstallCommand;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+
+class {{ class }}ServiceProvider extends ServiceProvider
+{
+    public const HAS_BUNDLE = {{ has_bundle }};
+
+    public function boot(): void
+    {
+        // Developer blocks shipped with this package.
+        foreach (glob(__DIR__ . '/Blocks/*.php') ?: [] as $file) {
+            Atlas::block(__NAMESPACE__ . '\\Blocks\\' . basename($file, '.php'));
+        }
+
+        // Block views live in resources/views/atlas/blocks (found as "atlas.blocks.*").
+        if (is_dir(__DIR__ . '/../resources/views')) {
+            View::addLocation(__DIR__ . '/../resources/views');
+        }
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([InstallCommand::class]);
+
+            if (is_dir(__DIR__ . '/../lang')) {
+                $this->publishes([__DIR__ . '/../lang' => $this->app->langPath('vendor/atlas')], '{{ command }}-lang');
+            }
+        }
+    }
+
+    /** Absolute path of the content bundle directory. */
+    public static function bundlePath(): string
+    {
+        return __DIR__ . '/../resources/atlas';
+    }
+}

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Blocks\Builtin;
 
 use Atlas\Blocks\Block;
@@ -16,6 +18,8 @@ abstract class BuiltinBlock extends Block
     protected string $category = 'Content';
 
     protected bool $container = false;
+
+    protected bool $fullBleed = false;
 
     public function type(): string
     {
@@ -42,8 +46,13 @@ abstract class BuiltinBlock extends Block
         return $this->container;
     }
 
+    public function fullBleed(): bool
+    {
+        return $this->fullBleed;
+    }
+
     public function view(): string
     {
-        return 'atlas::blocks.'.$this->type;
+        return 'atlas::blocks.' . $this->type;
     }
 }

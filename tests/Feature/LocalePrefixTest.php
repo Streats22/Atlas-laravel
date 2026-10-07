@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Tests\Feature;
 
 use Atlas\Facades\Atlas;
@@ -24,7 +26,7 @@ class LocalePrefixTest extends TestCase
 
         $this->get('/home')->assertOk()->assertSee('Welcome')->assertSee('lang="en"', false);
         $this->get('/nl/home')->assertOk()->assertSee('Welkom')->assertSee('lang="nl"', false)
-            ->assertSee('hreflang="nl" href="'.url('/nl/home').'"', false);
+            ->assertSee('hreflang="nl" href="' . url('/nl/home') . '"', false);
         $this->get('/nl')->assertOk()->assertSee('Welkom'); // home page in Dutch
         $this->get('/fr/home')->assertNotFound();
     }

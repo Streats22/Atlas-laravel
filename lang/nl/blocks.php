@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'section' => ['label' => 'Sectie'], 'columns' => ['label' => 'Kolommen'], 'spacer' => ['label' => 'Witruimte'], 'divider' => ['label' => 'Scheidingslijn'],
     'accordion' => ['label' => 'Accordeon'], 'heading' => ['label' => 'Kop'], 'text' => ['label' => 'Tekst'], 'image' => ['label' => 'Afbeelding'],

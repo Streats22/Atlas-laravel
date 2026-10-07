@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Tests\Feature;
 
 use Atlas\Tests\TestCase;
@@ -19,7 +21,7 @@ class CommandTest extends TestCase
         $this->assertFileExists($view);
         $this->assertStringContainsString("return 'pricing-table';", file_get_contents($class));
         $this->assertNotFalse(token_get_all(file_get_contents($class)));
-        exec('php -l '.escapeshellarg($class), $out, $code);
+        exec('php -l ' . escapeshellarg($class), $out, $code);
         $this->assertSame(0, $code, implode("\n", $out));
 
         $this->artisan('atlas:make-block', ['name' => 'PricingTable'])->assertFailed();

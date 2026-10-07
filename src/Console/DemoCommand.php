@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Console;
 
 use Atlas\Atlas;
@@ -22,10 +24,10 @@ class DemoCommand extends Command
         $tpl = $this->atlas->blocks()->get($type)->toDefinition()['template'];
 
         return [
-            'id' => 'd'.str_pad((string) ++$this->n, 3, '0', STR_PAD_LEFT),
+            'id' => 'd' . str_pad((string) ++$this->n, 3, '0', STR_PAD_LEFT),
             'type' => $type,
             'props' => array_merge((array) $tpl['props'], $props),
-            'children' => $children ?: array_map(fn ($c) => ['id' => 'd'.str_pad((string) ++$this->n, 3, '0', STR_PAD_LEFT), 'type' => $c['type'], 'props' => array_merge((array) $this->atlas->blocks()->get($c['type'])->toDefinition()['template']['props'], (array) ($c['props'] ?? [])), 'children' => []], $tpl['children']),
+            'children' => $children ?: array_map(fn ($c) => ['id' => 'd' . str_pad((string) ++$this->n, 3, '0', STR_PAD_LEFT), 'type' => $c['type'], 'props' => array_merge((array) $this->atlas->blocks()->get($c['type'])->toDefinition()['template']['props'], (array) ($c['props'] ?? [])), 'children' => []], $tpl['children']),
         ];
     }
 
@@ -62,59 +64,52 @@ class DemoCommand extends Command
                 'primary_label' => 'See my work', 'primary_label@nl' => 'Bekijk mijn werk', 'primary_url' => '#work',
                 'secondary_label' => 'Get in touch', 'secondary_label@nl' => 'Neem contact op', 'secondary_url' => '#contact',
             ]),
-            $section(['padding_y' => 32, 'max_width' => 'normal'], [
+            $section(['max_width' => 'normal'], [
                 $this->n('typewriter', ['prefix' => 'I design', 'prefix@nl' => 'Ik ontwerp', 'words' => "brands\nwebsites\napps\nexperiences", 'words@nl' => "merken\nwebsites\napps\nbelevingen", 'suffix' => '.', 'anim' => 'fade-up']),
             ]),
-            $section(['tone' => 'surface', 'padding_y' => 56], [
+            $section(['tone' => 'surface'], [
                 $this->n('counter', ['anim' => 'fade-up']),
             ]),
-            $section(['padding_y' => 72, 'html_id' => null], [
+            $section([], [
                 $this->n('heading', ['eyebrow' => 'Selected work', 'eyebrow@nl' => 'Uitgelicht werk', 'text' => 'Projects I am proud of', 'text@nl' => 'Projecten waar ik trots op ben', 'level' => 'h2', 'align' => 'center', 'anim' => 'fade-up', 'html_id' => 'work']),
-                $this->n('spacer', ['height' => 24]),
                 $this->n('portfolio-grid', ['items' => $work, 'all_label' => 'All', 'all_label@nl' => 'Alles', 'anim' => 'fade-up', 'style' => 'overlay']),
             ]),
-            $section(['tone' => 'surface', 'padding_y' => 72], [
+            $section(['tone' => 'surface'], [
                 $this->n('project-showcase', [
                     'title' => 'Aurora Brand System', 'summary' => 'A complete identity for a climate-tech startup.', 'summary@nl' => 'Een complete identiteit voor een climate-tech startup.',
                     'description' => "The brief: **look credible to investors and approachable to families**.\n\n- Logo, colour & type\n- Motion principles\n- A coded component library",
                     'image_side' => 'right', 'anim' => 'fade-up',
                 ]),
             ]),
-            $section(['padding_y' => 72], [
+            $section([], [
                 $this->n('columns', ['layout' => '1fr 1fr', 'gap' => 48], [
                     $section(['padding_y' => 0, 'max_width' => 'full'], [
                         $this->n('heading', ['text' => 'Skills', 'text@nl' => 'Vaardigheden', 'level' => 'h3']),
-                        $this->n('spacer', ['height' => 12]),
                         $this->n('skills', ['items' => [['name' => 'Brand & identity', 'level' => 92], ['name' => 'Laravel & PHP', 'level' => 88], ['name' => 'Motion design', 'level' => 74], ['name' => 'Accessibility', 'level' => 81]]]),
                     ]),
                     $section(['padding_y' => 0, 'max_width' => 'full'], [
                         $this->n('heading', ['text' => 'Experience', 'text@nl' => 'Ervaring', 'level' => 'h3']),
-                        $this->n('spacer', ['height' => 12]),
                         $this->n('timeline'),
                     ]),
                 ]),
             ]),
-            $section(['tone' => 'inverted', 'padding_y' => 40], [
+            $section(['tone' => 'inverted'], [
                 $this->n('marquee', ['items' => [['text' => 'Branding'], ['text' => 'Web'], ['text' => 'Apps'], ['text' => 'Motion'], ['text' => 'Print']], 'size' => 'xl', 'speed' => 28]),
             ]),
-            $section(['padding_y' => 72], [
+            $section([], [
                 $this->n('heading', ['text' => 'Kind words', 'text@nl' => 'Lovende woorden', 'align' => 'center']),
-                $this->n('spacer', ['height' => 20]),
                 $this->n('testimonials', ['layout' => 'carousel']),
             ]),
-            $section(['tone' => 'surface', 'padding_y' => 72, 'max_width' => 'narrow'], [
+            $section(['tone' => 'surface', 'max_width' => 'narrow'], [
                 $this->n('heading', ['text' => 'Questions', 'text@nl' => 'Vragen', 'align' => 'center']),
-                $this->n('spacer', ['height' => 16]),
                 $this->n('accordion', ['items' => [
                     ['title' => 'Are you available for new projects?', 'title@nl' => 'Ben je beschikbaar voor nieuwe projecten?', 'text' => 'Yes — from next month.', 'text@nl' => 'Ja — vanaf volgende maand.'],
                     ['title' => 'How do we start?', 'title@nl' => 'Hoe beginnen we?', 'text' => 'A 30 minute call to understand your goals.', 'text@nl' => 'Een gesprek van 30 minuten om je doelen te begrijpen.'],
                 ]]),
             ]),
-            $section(['tone' => 'accent', 'padding_y' => 72, 'html_id' => 'contact'], [
+            $section(['tone' => 'accent', 'html_id' => 'contact'], [
                 $this->n('heading', ['text' => "Let's build something great", 'text@nl' => 'Laten we iets moois bouwen', 'align' => 'center', 'level' => 'h2']),
-                $this->n('spacer', ['height' => 16]),
                 $this->n('button', ['label' => 'hello@example.com', 'url' => 'mailto:hello@example.com', 'align' => 'center', 'size' => 'lg', 'anim' => 'zoom-in']),
-                $this->n('spacer', ['height' => 20]),
                 $this->n('social-links', ['align' => 'center']),
             ]),
             $section(['padding_y' => 24], [
@@ -130,7 +125,7 @@ class DemoCommand extends Command
             'meta' => ['description' => 'A sample portfolio built with Atlas.', 'theme' => 'auto', 'theme_toggle' => true],
         ]);
 
-        $this->info('Demo page created: '.$page->url());
+        $this->info('Demo page created: ' . $page->url());
 
         return self::SUCCESS;
     }

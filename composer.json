@@ -1,7 +1,14 @@
 {
     "name": "streats22/atlas",
-    "description": "Atlas — a visual drag & drop page builder for Laravel with first-class custom code support.",
-    "keywords": ["laravel", "page-builder", "drag-and-drop", "visual-editor", "cms", "atlas"],
+    "description": "Atlas \u2014 a visual drag & drop page builder for Laravel with first-class custom code support.",
+    "keywords": [
+        "laravel",
+        "page-builder",
+        "drag-and-drop",
+        "visual-editor",
+        "cms",
+        "atlas"
+    ],
     "license": "MIT",
     "type": "library",
     "require": {
@@ -17,25 +24,42 @@
         "illuminate/auth": "^12.0|^13.0"
     },
     "require-dev": {
+        "laravel/pint": "^1.18",
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpunit": "^11.0|^12.0"
     },
     "autoload": {
-        "psr-4": { "Atlas\\": "src/" }
+        "psr-4": {
+            "Atlas\\": "src/"
+        }
     },
     "autoload-dev": {
-        "psr-4": { "Atlas\\Tests\\": "tests/" }
+        "psr-4": {
+            "Atlas\\Tests\\": "tests/"
+        }
     },
     "extra": {
         "laravel": {
-            "providers": ["Atlas\\AtlasServiceProvider"],
-            "aliases": { "Atlas": "Atlas\\Facades\\Atlas" }
+            "providers": [
+                "Atlas\\AtlasServiceProvider"
+            ],
+            "aliases": {
+                "Atlas": "Atlas\\Facades\\Atlas"
+            }
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/phpunit",
+        "lint": "vendor/bin/pint --test src tests config database routes lang",
+        "fix": "vendor/bin/pint src tests config database routes lang",
+        "check": [
+            "@lint",
+            "@test"
+        ]
     },
-    "config": { "sort-packages": true },
+    "config": {
+        "sort-packages": true
+    },
     "minimum-stability": "stable",
     "prefer-stable": true
 }

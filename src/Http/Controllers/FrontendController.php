@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Atlas\Http\Controllers;
 
 use Atlas\Models\Page;

@@ -685,7 +685,8 @@
     line.hidden = false;
     line.classList.remove('atlas-drop--box');
     if (!ref) {
-      var cr = containerEl.getBoundingClientRect();
+      var cr = (containerEl || doc.body).getBoundingClientRect();
+      if (!containerEl) cr = { left: 0, top: 0, width: fr.width, height: fr.height };
       line.classList.add('atlas-drop--box');
       place(line, { left: cr.left + o.x, top: cr.top + o.y, width: cr.width, height: cr.height });
     } else {

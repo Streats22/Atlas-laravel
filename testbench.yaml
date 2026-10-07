@@ -1,0 +1,8 @@
+providers:
+  - Atlas\AtlasServiceProvider
+migrations: true
+env:
+  APP_ENV: local
+  DB_CONNECTION: sqlite
+  SESSION_DRIVER: file
+  APP_KEY: base64:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=

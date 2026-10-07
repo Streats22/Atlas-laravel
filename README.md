@@ -8,8 +8,45 @@ A visual **drag & drop page builder for Laravel 12 and 13** — with light/dark 
 * **Translations** – translate any text per language, language switcher, `/{locale}/…` URLs, translated editor UI (English, Dutch).
 * **Animations** – entrance & hover effects on every block, plus counters, typewriter, marquee, carousel, parallax, Lottie. Respects *reduce motion*.
 * **Custom code, three ways** – raw HTML/CSS/JS, PHP + Blade blocks, and a no-PHP **block builder** inside the editor.
+* **Ships as a package** – `atlas:package` turns your finished site (blocks, pages, media) into a publishable Composer package.
 * **No build step** – the editor and the page runtime are dependency-free JavaScript shipped with the package.
 * **Secure by default** – the editor is closed outside `local` until you decide who may use it.
+
+<p align="center">
+  <img src="docs/gifs/drag-and-drop.gif" alt="Building a page by dragging blocks" width="860">
+</p>
+
+## See it
+
+| Light | Dark |
+|-------|------|
+| <img src="docs/screenshots/public-light-hero.png" alt="Public page, light mode"> | <img src="docs/screenshots/public-dark-hero.png" alt="Public page, dark mode"> |
+
+| Portfolio grid | Mobile |
+|----------------|--------|
+| <img src="docs/screenshots/portfolio-light.png" alt="Portfolio grid"> | <img src="docs/screenshots/mobile-portfolio.png" alt="Mobile layout" width="260"> |
+
+<details>
+<summary><strong>More screenshots & GIFs</strong></summary>
+
+**Editor** — blocks palette, live canvas, inspector with repeaters, translations and animation settings
+<img src="docs/screenshots/editor-light.png" alt="Editor, light">
+<img src="docs/screenshots/editor-dark.png" alt="Editor, dark, with the canvas previewing dark mode">
+<img src="docs/screenshots/editor-translation.png" alt="Editing the Dutch version of a page">
+<img src="docs/screenshots/editor-page-settings.png" alt="Page settings: theme, accent, fonts, spacing">
+<img src="docs/screenshots/block-builder.png" alt="Custom block builder">
+
+**Dark / light mode** &nbsp; <img src="docs/gifs/dark-mode.gif" alt="Toggling dark mode" width="700">
+
+**Portfolio filter & lightbox** &nbsp; <img src="docs/gifs/portfolio-filter.gif" alt="Filtering a portfolio" width="700">
+
+**Scroll animations, counters, typewriter** &nbsp; <img src="docs/gifs/animations.gif" alt="Scroll animations" width="700">
+
+**Translations** &nbsp; <img src="docs/gifs/translations.gif" alt="Switching language" width="700">
+
+**Block builder (no PHP)** &nbsp; <img src="docs/gifs/block-builder.gif" alt="Creating a custom block" width="700">
+
+</details>
 
 ## Install
 
@@ -64,6 +101,18 @@ Shortcuts: `Ctrl/⌘+S` save · `Ctrl/⌘+Z` undo · `Ctrl/⌘+Shift+Z` redo · 
 | **Developer** | Custom Code, Blade Code (opt-in) |
 
 List everything registered in your app: `php artisan atlas:blocks`.
+
+## Spacing
+
+Pages breathe by default. A **Spacing** setting (Page tab: *Compact / Comfortable / Spacious*, or `theme.spacing` in config) drives three CSS variables used by every block:
+
+| Variable | Compact → Comfortable → Spacious | Used for |
+|----------|----------------------------------|----------|
+| `--atlas-space` | .75rem → 1.5rem → 2.5rem | vertical rhythm between sibling blocks |
+| `--atlas-section-y` | 40px → 72px → 112px | default Section padding (leave *Vertical padding* empty to use it) |
+| `--atlas-gutter` | 20–40px (responsive) | page side padding |
+
+Blocks placed directly on the page (outside a Section) automatically get the same gutters and rhythm, headings sit closer to the text that follows them, and cards, quotes and accordions have generous inner padding. Override any block with *Spacing & visibility → Margin top/bottom*.
 
 ## Light & dark mode
 
@@ -237,6 +286,43 @@ Atlas::viewBlock('hero-banner', 'blocks.hero', 'Hero banner', [Field::text('titl
 
 Block labels, field labels and options are translatable through `lang/vendor/atlas/{locale}/blocks.php`.
 
+## Ship your site as a package
+
+Finished a site? Turn it into something you can `composer require` anywhere.
+
+```bash
+php artisan atlas:package acme/portfolio-site --dry-run     # see what would be included
+php artisan atlas:package acme/portfolio-site --archive     # generate packages/acme/portfolio-site (+ .zip)
+```
+
+The packager is *smart*: it finds your developer blocks (`app/Atlas/Blocks`, namespace rewritten to the package's), their views (`resources/views/atlas`), your translations (`lang/vendor/atlas`) and exports your **pages, the builder blocks they use and the uploaded images** into a bundle. It generates a complete package:
+
+```
+composer.json · README · LICENSE · CHANGELOG · .gitignore · .gitattributes · phpunit.xml.dist
+src/AcmePortfolioSiteServiceProvider.php   (registers blocks + views, `acme:install` command)
+src/Blocks/*  ·  resources/views/atlas/*  ·  lang/*
+resources/atlas/bundle.json + media/       (your content)
+tests/PackageTest.php  ·  .github/workflows/tests.yml (PHP 8.3/8.4 × Laravel 12/13)
+```
+
+It warns when a block references your app's own classes (`App\Models\…`), lints every generated PHP file, refuses to overwrite without `--force`, and prints the next steps (local path-repository test, tag, submit to Packagist). Consumers then run:
+
+```bash
+composer require acme/portfolio-site
+php artisan portfolio-site:install        # imports pages, builder blocks and images (--force to overwrite)
+```
+
+Options: `--pages=home,about` · `--all-blocks` · `--no-pages` · `--no-blocks` · `--no-media` · `--namespace=` · `--author=` · `--license=` · `--path=`.
+
+**Moving content without a package**
+
+```bash
+php artisan atlas:export site.zip            # pages + builder blocks + images (.json = content only)
+php artisan atlas:import site.zip --force    # into another install (image URLs are rewritten automatically)
+```
+
+Bundles are validated on import (format version, block names, path-traversal-safe zips) and never overwrite existing pages unless `--force`.
+
 ## Embedding pages in your own views
 ```blade
 <x-atlas::page slug="footer" />        {{-- content + page CSS/JS --}}
@@ -253,7 +339,7 @@ Block labels, field labels and options are translatable through `lang/vendor/atl
 | `custom_code` | `true` | raw HTML/CSS/JS, block builder |
 | `allow_blade_code` | `false` | Blade Code block |
 | `locales` / `default_locale` | `[]` / app locale | content languages |
-| `theme.*` | see above | colour mode, accent, fonts, tokens |
+| `theme.*` | see above | colour mode, accent, fonts, spacing, tokens |
 | `cdn.lottie` | jsDelivr | Lottie player URL |
 | `assets.styles / scripts` | `[]` | global libraries |
 | `discover.path / namespace` | `app/Atlas/Blocks` | block auto-discovery |
@@ -268,8 +354,18 @@ Block labels, field labels and options are translatable through `lang/vendor/atl
 | `atlas:demo [--slug=demo] [--force]` | sample portfolio page |
 | `atlas:make-block Name [--container] [--group=] [--icon=]` | scaffold a block |
 | `atlas:blocks` | list registered blocks |
+| `atlas:export [file] [--pages=] [--all-blocks] [--no-media]` | portable bundle of pages, builder blocks, media |
+| `atlas:import file [--force]` | import a bundle |
+| `atlas:package vendor/name [--dry-run] [--archive] …` | generate a publishable package from this site |
 
 Publish tags: `atlas-config`, `atlas-views`, `atlas-lang`, `atlas-migrations`.
+
+## Code quality
+
+* **PSR-12** (enforced by Pint — `composer lint` / `composer fix`) with `declare(strict_types=1)` everywhere.
+* Object-oriented and DRY: single-purpose classes, constructor injection, enums and value objects (`PageStatus`, `ThemeMode`, `Spacing`, `Theme`, `PageMeta`), thin controllers with `FormRequest`s.
+* **SQL-injection safe** — every query is bound through Eloquent; the suite fails if raw SQL APIs appear in `src/`, and tests throw hostile payloads at slugs, block names, titles and query strings.
+* CI runs lint, JS syntax checks and the test-suite on PHP 8.3/8.4 × Laravel 12/13. See [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) for contributor and AI-agent guidance.
 
 ## Security notes
 * Editor routes require the `useAtlas` gate and CSRF; responses are `noindex`.

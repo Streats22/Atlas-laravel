@@ -148,6 +148,9 @@ class AtlasServiceProvider extends ServiceProvider
             Route::get('assets/{file}', [Http\Controllers\AssetController::class, 'show'])
                 ->where('file', 'atlas\.(js|css)')->name('asset');
 
+            Route::get('assets/demo/{file}', [Http\Controllers\AssetController::class, 'demo'])
+                ->where('file', '[1-8]\.jpg')->name('asset.demo');
+
             Route::middleware(Authorize::class)->group(__DIR__ . '/../routes/web.php');
         });
 

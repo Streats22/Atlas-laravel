@@ -19,6 +19,12 @@ class DemoCommand extends Command
     protected Atlas $atlas;
 
     /** Build a node from a block's defaults, overriding props. */
+    /** URL of a bundled sample image (1–8). */
+    protected function img(int $n): string
+    {
+        return route('atlas.asset.demo', ['file' => "{$n}.jpg"], false);
+    }
+
     protected function n(string $type, array $props = [], array $children = []): array
     {
         $tpl = $this->atlas->blocks()->get($type)->toDefinition()['template'];
@@ -48,12 +54,12 @@ class DemoCommand extends Command
         $section = fn (array $props, array $kids) => $this->n('section', $props, $kids);
 
         $work = [
-            ['title' => 'Aurora Brand System', 'category' => 'Branding', 'description' => 'Identity, motion and a design system for a climate startup.', 'tags' => 'Branding, Motion', 'url' => '', 'image' => ''],
-            ['title' => 'Northwind Storefront', 'category' => 'Web', 'description' => 'A headless commerce site with sub-second page loads.', 'tags' => 'Laravel, UX', 'url' => '', 'image' => ''],
-            ['title' => 'Pulse Fitness App', 'category' => 'App', 'description' => 'Concept to prototype for a coaching app.', 'tags' => 'UI, Prototype', 'url' => '', 'image' => ''],
-            ['title' => 'Atlas Annual Report', 'category' => 'Print', 'description' => 'A 120-page editorial design.', 'tags' => 'Editorial', 'url' => '', 'image' => ''],
-            ['title' => 'Lumen Dashboard', 'category' => 'Web', 'description' => 'Analytics for 40k daily users.', 'tags' => 'Dashboard, Charts', 'url' => '', 'image' => ''],
-            ['title' => 'Mono Packaging', 'category' => 'Branding', 'description' => 'Sustainable packaging range.', 'tags' => 'Print, 3D', 'url' => '', 'image' => ''],
+            ['image' => $this->img(1), 'title' => 'Aurora Brand System', 'category' => 'Branding', 'description' => 'Identity, motion and a design system for a climate startup.', 'tags' => 'Branding, Motion', 'url' => ''],
+            ['image' => $this->img(2), 'title' => 'Northwind Storefront', 'category' => 'Web', 'description' => 'A headless commerce site with sub-second page loads.', 'tags' => 'Laravel, UX', 'url' => ''],
+            ['image' => $this->img(3), 'title' => 'Pulse Fitness App', 'category' => 'App', 'description' => 'Concept to prototype for a coaching app.', 'tags' => 'UI, Prototype', 'url' => ''],
+            ['image' => $this->img(4), 'title' => 'Atlas Annual Report', 'category' => 'Print', 'description' => 'A 120-page editorial design.', 'tags' => 'Editorial', 'url' => ''],
+            ['image' => $this->img(5), 'title' => 'Lumen Dashboard', 'category' => 'Web', 'description' => 'Analytics for 40k daily users.', 'tags' => 'Dashboard, Charts', 'url' => ''],
+            ['image' => $this->img(6), 'title' => 'Mono Packaging', 'category' => 'Branding', 'description' => 'Sustainable packaging range.', 'tags' => 'Print, 3D', 'url' => ''],
         ];
 
         $tree = [
@@ -76,10 +82,19 @@ class DemoCommand extends Command
             ]),
             $section(['tone' => 'surface'], [
                 $this->n('project-showcase', [
-                    'title' => 'Aurora Brand System', 'summary' => 'A complete identity for a climate-tech startup.', 'summary@nl' => 'Een complete identiteit voor een climate-tech startup.',
+                    'image' => $this->img(1), 'title' => 'Aurora Brand System', 'summary' => 'A complete identity for a climate-tech startup.', 'summary@nl' => 'Een complete identiteit voor een climate-tech startup.',
                     'description' => "The brief: **look credible to investors and approachable to families**.\n\n- Logo, colour & type\n- Motion principles\n- A coded component library",
                     'image_side' => 'right', 'anim' => 'fade-up',
                 ]),
+            ]),
+            $section([], [
+                $this->n('heading', ['eyebrow' => 'Gallery', 'eyebrow@nl' => 'Galerij', 'text' => 'Details & moments', 'text@nl' => 'Details & momenten', 'align' => 'center', 'anim' => 'fade-up']),
+                $this->n('gallery', ['columns' => '4', 'ratio' => '1/1', 'items' => [
+                    ['image' => $this->img(5), 'alt' => 'Study one', 'caption' => ''],
+                    ['image' => $this->img(7), 'alt' => 'Study two', 'caption' => ''],
+                    ['image' => $this->img(8), 'alt' => 'Study three', 'caption' => ''],
+                    ['image' => $this->img(3), 'alt' => 'Study four', 'caption' => ''],
+                ]]),
             ]),
             $section([], [
                 $this->n('columns', ['layout' => '1fr 1fr', 'gap' => 48], [

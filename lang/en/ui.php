@@ -57,4 +57,6 @@ return [
     // Accessibility labels used on public pages
     'a11y_close' => 'Close', 'a11y_prev' => 'Previous', 'a11y_next' => 'Next', 'a11y_slide' => 'Slide :n',
     'a11y_social' => 'Social media', 'a11y_language' => 'Language', 'a11y_filter' => 'Filter projects', 'a11y_carousel' => 'Carousel',
+    // Toolbar on the live site
+    'adminbar_edit' => 'Edit page', 'adminbar_hide' => 'Hide toolbar',
 ];

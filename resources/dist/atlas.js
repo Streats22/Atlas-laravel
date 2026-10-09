@@ -195,6 +195,7 @@
     insertNode(parentId, index, node);
     state.selected = node.id;
     commit();
+    if (phone.matches) closePanel(); // reveal the canvas so the new block is visible
   }
   function deleteSelected() {
     if (!state.selected) return;
@@ -284,26 +285,32 @@
     els.undo = h('button', { class: 'atlas-btn', title: t('undo'), onclick: function () { restore(hIndex - 1); } }, '↶');
     els.redo = h('button', { class: 'atlas-btn', title: t('redo'), onclick: function () { restore(hIndex + 1); } }, '↷');
     els.devices = {};
-    var devices = h('div', { class: 'atlas-top__group' }, [['desktop', '🖥'], ['tablet', '▭'], ['mobile', '📱']].map(function (d) {
+    var devices = h('div', { class: 'atlas-top__group atlas-top__devices' }, [['desktop', '🖥'], ['tablet', '▭'], ['mobile', '📱']].map(function (d) {
       return els.devices[d[0]] = h('button', { class: 'atlas-btn', title: t('device_' + d[0]), onclick: function () { setDevice(d[0]); } }, d[1]);
     }));
     els.save = h('button', { class: 'atlas-btn atlas-btn--primary', onclick: function () { save(); } }, t('save'));
-    els.viewLink = h('a', { class: 'atlas-btn', href: cfg.urls.public, target: '_blank', rel: 'noopener' }, t('view'));
+    els.viewLink = h('a', { class: 'atlas-btn atlas-top__view', href: viewHref(cfg.urls.public), onclick: function (e) {
+      // Same tab: the live page shows an Atlas toolbar with a way back. Save first so it shows the latest content.
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      var go = function (ok) { if (ok) location.href = els.viewLink.href; };
+      if (state.dirty) save().then(go); else go(true);
+    } }, t('view'));
 
     // content language (only when more than one locale is configured)
     els.localeSel = MULTI ? h('select', { class: 'atlas-select', style: { width: 'auto' }, title: t('language'), onchange: function (e) { setLocale(e.target.value); } },
       LOCALES.map(function (c) { return h('option', { value: c }, '🌐 ' + cfg.locales.available[c] + (c === DEFAULT_LOCALE ? ' (' + t('default_lang') + ')' : '')); })) : null;
 
     // canvas light/dark preview + editor UI theme
-    els.canvasTheme = h('button', { class: 'atlas-btn', title: t('canvas_theme'), onclick: toggleCanvasTheme }, '◐');
-    els.uiTheme = h('button', { class: 'atlas-btn', title: t('ui_theme'), onclick: toggleUiTheme }, '☾');
+    els.canvasTheme = h('button', { class: 'atlas-btn atlas-top__theme', title: t('canvas_theme'), onclick: toggleCanvasTheme }, '◐');
+    els.uiTheme = h('button', { class: 'atlas-btn atlas-top__theme', title: t('ui_theme'), onclick: toggleUiTheme }, '☾');
 
     var top = h('div', { class: 'atlas-top' },
-      h('a', { class: 'atlas-btn', href: cfg.urls.pages, title: t('all_pages'), onclick: leaveGuard }, t('back')),
+      h('a', { class: 'atlas-btn atlas-top__back', href: cfg.urls.pages, title: t('all_pages'), onclick: leaveGuard }, t('back')),
       els.title, els.slug, els.statusSel, els.localeSel,
       h('span', { class: 'atlas-top__spacer' }),
       els.status, els.undo, els.redo, devices, els.canvasTheme, els.uiTheme,
-      h('button', { class: 'atlas-btn', onclick: preview }, t('preview')),
+      h('button', { class: 'atlas-btn atlas-top__preview', onclick: preview }, t('preview')),
       els.viewLink, els.save);
 
     els.leftBody = h('div', { class: 'atlas-scroll' });
@@ -312,16 +319,24 @@
     var tabs = h('div', { class: 'atlas-tabs' }, tabDefs.map(function (d) {
       return els.tabs[d[0]] = h('button', { class: 'atlas-tab', onclick: function () { setTab(d[0]); } }, d[1]);
     }));
-    var left = h('aside', { class: 'atlas-side' }, tabs, els.leftBody);
+    els.left = h('aside', { class: 'atlas-side' }, tabs, els.leftBody);
+    var left = els.left;
 
     els.iframe = h('iframe', { class: 'atlas-frame', sandbox: 'allow-same-origin', title: 'Canvas' });
     els.overlay = h('div', { class: 'atlas-overlay' });
     els.stage = h('main', { class: 'atlas-stage' }, els.iframe, els.overlay);
 
     els.inspector = h('div', { class: 'atlas-scroll' });
-    var right = h('aside', { class: 'atlas-side atlas-side--right' }, els.inspector);
+    els.right = h('aside', { class: 'atlas-side atlas-side--right' }, els.inspector);
+    var right = els.right;
 
-    root.append(h('div', { class: 'atlas-shell' }, top, h('div', { class: 'atlas-body' }, left, els.stage, right)));
+    // Phone layout: the side panels slide up as sheets, opened from this bar.
+    els.navBtns = {};
+    els.nav = h('nav', { class: 'atlas-nav' }, [['blocks', '＋', t('blocks')], ['layers', '☰', t('layers')], ['page', '⚙', t('page')], ['inspector', '✎', t('edit')]].map(function (d) {
+      return els.navBtns[d[0]] = h('button', { class: 'atlas-nav__btn', onclick: function () { togglePanel(d[0]); } }, h('span', { class: 'atlas-nav__ico' }, d[1]), h('span', null, d[2]));
+    }));
+
+    root.append(h('div', { class: 'atlas-shell' }, top, h('div', { class: 'atlas-body' }, left, els.stage, right), els.nav));
 
     els.hoverBox = h('div', { class: 'atlas-box atlas-box--hover', hidden: true }, els.hoverTag = h('span', { class: 'atlas-hover-tag' }));
     els.selBox = h('div', { class: 'atlas-box atlas-box--sel', hidden: true });
@@ -344,6 +359,24 @@
     Object.keys(els.tabs).forEach(function (k) { els.tabs[k].classList.toggle('atlas-tab--on', k === t); });
     renderLeft();
   }
+  /* Bottom-sheet panels (phones only; on wider screens the panels are always visible) */
+  var phone = window.matchMedia('(max-width: 800px)');
+  function togglePanel(name) {
+    if (state.sheet === name) return closePanel();
+    state.sheet = name;
+    if (name === 'inspector') renderInspector(); else setTab(name);
+    syncPanels();
+  }
+  function closePanel() { state.sheet = null; syncPanels(); }
+  function syncPanels() {
+    var open = phone.matches ? state.sheet : null;
+    els.left.classList.toggle('atlas-side--open', open === 'blocks' || open === 'layers' || open === 'page');
+    els.right.classList.toggle('atlas-side--open', open === 'inspector');
+    Object.keys(els.navBtns).forEach(function (k) { els.navBtns[k].classList.toggle('atlas-nav__btn--on', open === k); });
+    els.navBtns.inspector.classList.toggle('atlas-nav__btn--has', !!state.selected);
+    setTimeout(updateOverlay, 260);
+  }
+  phone.addEventListener ? phone.addEventListener('change', syncPanels) : phone.addListener(syncPanels);
   function setStatus(s) { if (els.status) els.status.textContent = s; }
 
   // ---- content language & title
@@ -416,7 +449,7 @@
         return h('div', null,
           h('div', { class: 'atlas-cat' }, c),
           h('div', { class: 'atlas-palette' }, cats[c].map(function (b) {
-            return h('div', { class: 'atlas-block-item', title: t('drag_hint'), onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: b.type }); } },
+            return h('div', { class: 'atlas-block-item', title: t('drag_hint'), onpointerdown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: b.type }); } },
               h('span', { class: 'atlas-block-item__icon' }, b.icon), b.label);
           })));
       });
@@ -424,7 +457,7 @@
         out.push(h('div', null, h('div', { class: 'atlas-cat' }, t('custom_blocks')),
           (cfg.customBlocks || []).map(function (cb) {
             return h('div', { class: 'atlas-custom-item' },
-              h('div', { class: 'atlas-block-item', style: { cursor: 'grab' }, onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: cb.type }); } }, h('span', { class: 'atlas-block-item__icon' }, cb.icon || '◇'), cb.label),
+              h('div', { class: 'atlas-block-item', style: { cursor: 'grab' }, onpointerdown: function (e) { if (e.button === 0) beginPress(e, { kind: 'new', type: cb.type }); } }, h('span', { class: 'atlas-block-item__icon' }, cb.icon || '◇'), cb.label),
               h('button', { class: 'atlas-btn', title: t('edit_block'), onclick: function () { openBuilder(cb); } }, '✎'));
           }),
           h('button', { class: 'atlas-btn', style: { width: '100%', marginTop: '8px', justifyContent: 'center' }, onclick: function () { openBuilder(null); } }, t('new_block'))));
@@ -790,6 +823,7 @@
     doc.addEventListener('click', function (e) {
       e.preventDefault();
       var w = e.target.closest && e.target.closest('[data-atlas-id]');
+      if (state.sheet) closePanel();
       select(w ? w.dataset.atlasId : null);
     });
     doc.addEventListener('submit', function (e) { e.preventDefault(); });
@@ -828,6 +862,7 @@
   }
 
   function updateOverlay() {
+    if (els.navBtns) els.navBtns.inspector.classList.toggle('atlas-nav__btn--has', !!state.selected);
     // hover
     var he = hovered && hovered !== state.selected ? elOf(hovered) : null;
     els.hoverBox.hidden = !he;
@@ -841,7 +876,7 @@
     place(els.selBox, r);
     var f = find(state.selected);
     els.selBox.replaceChildren(h('div', { class: 'atlas-box__bar' + (r.top < 34 ? ' atlas-box__bar--in' : '') },
-      h('span', { class: 'atlas-grip', title: t('drag_to_move'), onmousedown: function (e) { if (e.button === 0) beginPress(e, { kind: 'move', id: state.selected }); } }, '⠿ '),
+      h('span', { class: 'atlas-grip', title: t('drag_to_move'), onpointerdown: function (e) { if (e.button === 0) beginPress(e, { kind: 'move', id: state.selected }); } }, '⠿ '),
       h('span', { class: 'atlas-box__label' }, f ? label(f.node.type) : ''),
       h('button', { title: t('move_up'), onclick: function () { moveSelected(-1); } }, '↑'),
       h('button', { title: t('move_down'), onclick: function () { moveSelected(1); } }, '↓'),
@@ -857,8 +892,9 @@
   function beginPress(e, payload) {
     e.preventDefault();
     press = { payload: payload, x: e.clientX, y: e.clientY };
-    window.addEventListener('mousemove', onPressMove);
-    window.addEventListener('mouseup', onPressUp);
+    window.addEventListener('pointermove', onPressMove);
+    window.addEventListener('pointerup', onPressUp);
+    window.addEventListener('pointercancel', cleanupPress);
   }
   function onPressMove(e) {
     if (!press) return;
@@ -874,8 +910,9 @@
   }
   function cleanupPress() {
     press = null;
-    window.removeEventListener('mousemove', onPressMove);
-    window.removeEventListener('mouseup', onPressUp);
+    window.removeEventListener('pointermove', onPressMove);
+    window.removeEventListener('pointerup', onPressUp);
+    window.removeEventListener('pointercancel', cleanupPress);
   }
 
   function startDrag(payload, e) {
@@ -887,8 +924,9 @@
     drag.timer = setInterval(function () {
       if (drag.scroll) { els.iframe.contentWindow.scrollBy(0, drag.scroll); updateDrop(); }
     }, 16);
-    window.addEventListener('mousemove', onDragMove);
-    window.addEventListener('mouseup', onDragEnd);
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+    window.addEventListener('pointercancel', onDragCancel);
     window.addEventListener('keydown', onDragKey, true);
     onDragMove(e);
   }
@@ -905,14 +943,16 @@
   }
   function onDragKey(e) { if (e.key === 'Escape') { e.stopPropagation(); endDrag(false); } }
   function onDragEnd() { endDrag(true); }
+  function onDragCancel() { endDrag(false); }
 
   function endDrag(apply) {
     var d = drag;
     drag = null;
     clearInterval(d.timer);
     d.ghost.remove(); d.shield.remove();
-    window.removeEventListener('mousemove', onDragMove);
-    window.removeEventListener('mouseup', onDragEnd);
+    window.removeEventListener('pointermove', onDragMove);
+    window.removeEventListener('pointerup', onDragEnd);
+    window.removeEventListener('pointercancel', onDragCancel);
     window.removeEventListener('keydown', onDragKey, true);
     els.dropLine.hidden = true;
     var el = d.payload.kind === 'move' ? elOf(d.payload.id) : null;
@@ -1044,12 +1084,14 @@
       clearDraft();
       state.page.slug = r.j.slug;
       els.slug.value = r.j.slug;
-      els.viewLink.href = r.j.url;
+      els.viewLink.href = viewHref(r.j.url);
       setStatus(t('saved')); toast(t('saved'));
       return true;
     }).catch(function () { toast(t('save_failed'), true); setStatus(t('not_saved')); return false; })
       .then(function (ok) { state.saving = false; els.save.disabled = false; return ok; });
   }
+  // Drafts have no public URL (it 404s), so "View" shows the preview instead.
+  function viewHref(publicUrl) { return state.page.status === 'published' ? publicUrl : cfg.urls.preview; }
   function preview() {
     var w = window.open('', '_blank');
     var go = function (ok) { if (w) { if (ok) w.location = cfg.urls.preview; else w.close(); } };

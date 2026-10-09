@@ -52,4 +52,6 @@ return [
     // Toegankelijkheidslabels op publieke pagina's
     'a11y_close' => 'Sluiten', 'a11y_prev' => 'Vorige', 'a11y_next' => 'Volgende', 'a11y_slide' => 'Dia :n',
     'a11y_social' => 'Sociale media', 'a11y_language' => 'Taal', 'a11y_filter' => 'Projecten filteren', 'a11y_carousel' => 'Carrousel',
+    // Toolbar on the live site
+    'adminbar_edit' => 'Pagina bewerken', 'adminbar_hide' => 'Werkbalk verbergen',
 ];

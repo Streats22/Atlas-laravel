@@ -4,6 +4,14 @@ All notable changes to Atlas are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+- Mobile-friendly editor: on phones the panels become bottom sheets opened from a bottom bar, Save stays pinned, controls get touch-sized and block moving/dragging works with touch (pointer events).
+- Floating Atlas toolbar on live pages (and draft previews) for users allowed by the `useAtlas` gate: status, "Edit page", "Pages", collapsible. Responses with it are `Cache-Control: private, no-store`. The editor's "View" now opens in the same tab (saving first) and shows the preview for drafts.
+- Redesigned page list (cards, status pills, responsive).
+
+### Changed
+- Editor asset URLs carry a `?v=` version so upgrades are not hidden by the one-hour browser cache.
+
 ### Fixed (from an independent code review)
 - Builder blocks no longer render raw HTML/JS when `custom_code` is disabled.
 - CSS `url()` injection and unwhitelisted style values (`width`, colours, backgrounds) in block views are neutralised (`cssUrl`, `cssColor`, `cssLength`).

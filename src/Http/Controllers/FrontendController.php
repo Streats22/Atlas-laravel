@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Http\Controllers;
 
 use Atlas\Models\Page;
+use Atlas\Support\AdminBar;
 use Atlas\Support\Locales;
 use Illuminate\Http\Request;
 
@@ -43,7 +44,15 @@ class FrontendController
     protected function respond(Request $request, Page $page)
     {
         $request->attributes->set('atlas.page', $page);
+        $html = $page->render();
 
-        return response($page->render())->header('Content-Type', 'text/html; charset=utf-8');
+        $response = response($html)->header('Content-Type', 'text/html; charset=utf-8');
+
+        if (AdminBar::allowedFor($request)) {
+            // Per-user markup: never let a shared cache store it.
+            $response->setContent(AdminBar::inject($html, $page))->header('Cache-Control', 'private, no-store');
+        }
+
+        return $response;
     }
 }

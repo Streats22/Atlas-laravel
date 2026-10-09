@@ -124,4 +124,12 @@ class Atlas
 
         return $page ? $page->renderBody() : new HtmlString('');
     }
+
+    /** URL of a bundled editor asset; the file's mtime busts the one-hour browser cache after an upgrade. */
+    public function assetUrl(string $file): string
+    {
+        $path = __DIR__ . '/../resources/dist/' . $file;
+
+        return route('atlas.asset', ['file' => $file, 'v' => is_file($path) ? filemtime($path) : 0]);
+    }
 }

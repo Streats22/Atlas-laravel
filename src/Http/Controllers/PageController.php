@@ -11,6 +11,7 @@ use Atlas\Enums\Spacing;
 use Atlas\Http\Requests\SavePageRequest;
 use Atlas\Models\CustomBlock;
 use Atlas\Models\Page;
+use Atlas\Support\AdminBar;
 use Atlas\Support\Features;
 use Atlas\Support\Locales;
 use Atlas\Support\SlugPolicy;
@@ -116,7 +117,8 @@ class PageController
         Locales::apply($request->query('locale'));
         $request->attributes->set('atlas.page', $page);
 
-        return response($page->render())->header('Content-Type', 'text/html; charset=utf-8');
+        // Behind the Authorize middleware, so the toolbar is always appropriate: it lets drafts link back to the editor.
+        return response(AdminBar::inject($page->render(), $page))->header('Content-Type', 'text/html; charset=utf-8');
     }
 
     public function destroy(Page $page): RedirectResponse

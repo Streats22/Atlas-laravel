@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SegmentRequest;
 use App\Models\Audience;
+use App\Models\Campaign;
 use App\Models\Segment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -62,6 +63,12 @@ class SegmentController extends Controller
 
     public function destroy(Audience $audience, Segment $segment): RedirectResponse
     {
+        // Deleting a segment would silently widen unsent campaigns to the whole audience.
+        $inUse = Campaign::query()->where('segment_id', $segment->id)
+            ->whereIn('status', ['draft', 'scheduled', 'sending', 'testing'])->pluck('name');
+        if ($inUse->isNotEmpty()) {
+            return back()->withErrors(['segment' => 'This segment is used by unsent campaigns: '.$inUse->implode(', ').'. Change those first.']);
+        }
         $segment->delete();
 
         return redirect()->route('audiences.segments.index', $audience)->with('status', 'Segment deleted.');

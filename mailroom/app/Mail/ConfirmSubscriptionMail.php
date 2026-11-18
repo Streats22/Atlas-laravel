@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Support\Facades\URL;
 
 class ConfirmSubscriptionMail extends Mailable
 {
@@ -28,7 +29,8 @@ class ConfirmSubscriptionMail extends Mailable
     {
         return new Content(view: 'emails.confirm', with: [
             'audience' => $this->contact->audience,
-            'url' => route('public.confirm', $this->contact->token),
+            // A signed, expiring link of its own: knowing the unsubscribe token is not enough to confirm.
+            'url' => URL::temporarySignedRoute('public.confirm', now()->addDays(7), ['contact' => $this->contact->id]),
         ]);
     }
 }

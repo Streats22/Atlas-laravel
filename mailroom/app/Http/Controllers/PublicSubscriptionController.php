@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
 class PublicSubscriptionController extends Controller
@@ -57,26 +58,30 @@ class PublicSubscriptionController extends Controller
         $contact = $audience->contacts()->where('email', $email)->first();
         $alreadySubscribed = $contact?->status === ContactStatus::Subscribed;
 
-        if (! $alreadySubscribed) {
+        if ($contact === null) {
             $status = $audience->double_opt_in ? ContactStatus::Pending : ContactStatus::Subscribed;
-            $contact ??= $audience->contacts()->make(['email' => $email, 'source' => 'form']);
+            $contact = $audience->contacts()->make(['email' => $email, 'source' => 'form']);
             $contact->fill(array_filter([
                 'first_name' => $data['first_name'] ?? null,
                 'last_name' => $data['last_name'] ?? null,
             ]) + [
-                'fields' => $fields->clean($audience, array_intersect_key((array) $request->input('fields', []), $audience->fields->where('show_on_form', true)->keyBy('key')->all()), $contact?->fields),
-                'consent_at' => $audience->gdpr_enabled ? now() : $contact?->consent_at,
-                'consent_text' => $audience->gdpr_enabled ? $audience->gdpr_text : $contact?->consent_text,
+                'fields' => $fields->clean($audience, array_intersect_key((array) $request->input('fields', []), $audience->fields->where('show_on_form', true)->keyBy('key')->all())),
+                'consent_at' => $audience->gdpr_enabled ? now() : null,
+                'consent_text' => $audience->gdpr_enabled ? $audience->gdpr_text : null,
                 'signup_ip' => $request->ip(),
                 'status' => $status,
                 'subscribed_at' => $status === ContactStatus::Subscribed ? now() : null,
-                'unsubscribed_at' => null,
             ])->save();
-
-            if ($audience->double_opt_in) {
+            if ($status === ContactStatus::Pending) {
                 Mail::to($contact->email)->send(new ConfirmSubscriptionMail($contact));
             }
+        } elseif (! $alreadySubscribed) {
+            // Anyone can type any address into a form. Someone who left (or bounced) only comes back
+            // by clicking the confirmation email, and the form never overwrites their stored data.
+            $contact->update(['status' => ContactStatus::Pending]);
+            Mail::to($contact->email)->send(new ConfirmSubscriptionMail($contact));
         }
+        $pending = $audience->double_opt_in || $contact->status === ContactStatus::Pending;
 
         // Landing-page signups: count the conversion and apply the page's tag.
         $page = $request->integer('landing') ? LandingPage::query()->where('audience_id', $audience->id)->find($request->integer('landing')) : null;
@@ -91,16 +96,21 @@ class PublicSubscriptionController extends Controller
         return view('public.message', [
             'audience' => $audience,
             'embed' => $request->boolean('embed'),
-            'title' => $audience->double_opt_in ? 'Almost done' : 'You\'re subscribed',
-            'message' => $audience->double_opt_in
+            'title' => $pending ? 'Almost done' : 'You\'re subscribed',
+            'message' => $pending
                 ? 'We sent you an email. Click the link inside to confirm your subscription.'
                 : 'Thanks for subscribing to '.$audience->name.'.',
         ]);
     }
 
-    public function confirm(string $token): View
+    /** GET only shows a button: mail scanners that follow links must not confirm on their own. */
+    public function confirmPage(Request $request, Contact $contact): View
     {
-        $contact = Contact::query()->where('token', $token)->firstOrFail();
+        return view('public.confirm', ['contact' => $contact, 'audience' => $contact->audience, 'action' => URL::temporarySignedRoute('public.confirm.do', now()->addDays(7), ['contact' => $contact->id])]);
+    }
+
+    public function confirm(Contact $contact): View
+    {
         if ($contact->status === ContactStatus::Pending) {
             $contact->confirm();
         }

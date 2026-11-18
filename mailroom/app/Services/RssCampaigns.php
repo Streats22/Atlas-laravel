@@ -47,16 +47,22 @@ final class RssCampaigns
         $since = isset($rss['last_item_at'])
             ? CarbonImmutable::parse($rss['last_item_at'])
             : $now->sub(($rss['frequency'] ?? 'daily') === 'weekly' ? '7 days' : '1 day');
-        $new = array_values(array_filter($feed['items'], fn ($i) => $i['date'] !== null && $i['date']->gt($since)));
+        // Items are identified by link (or title); dated items also have to be newer than the last send.
+        $seen = $rss['seen'] ?? [];
+        $key = fn (array $i) => substr(sha1($i['link'] ?: $i['title']), 0, 12);
+        $new = array_values(array_filter($feed['items'], fn ($i) => ! in_array($key($i), $seen, true)
+            && ($i['date'] === null || $i['date']->gt($since))));
+        $new = array_slice($new, 0, 20);
 
         $rss['last_checked_at'] = $now->toIso8601String();
+        $rss['seen'] = array_slice(array_values(array_unique([...array_map($key, $feed['items']), ...$seen])), 0, 300);
         unset($rss['last_error']);
         if ($new === []) {
             $campaign->update(['rss' => $rss]);
 
             return null;
         }
-        $rss['last_item_at'] = collect($new)->max('date')->toIso8601String();
+        $rss['last_item_at'] = (collect($new)->pluck('date')->filter()->max() ?? $now)->toIso8601String();
         $campaign->update(['rss' => $rss]);
 
         $child = $campaign->replicate(['status', 'rss', 'recipients_count', 'sent_at', 'scheduled_at', 'ab_test']);
@@ -65,7 +71,7 @@ final class RssCampaigns
             'parent_id' => $campaign->id,
             'name' => $campaign->name.' · '.$now->format('M j, Y'),
             'subject' => str_replace(['{{ rss_title }}', '{{rss_title}}'], $feed['title'], $campaign->subject),
-            'html' => (string) preg_replace('/\{\{\s*rss_items\s*\}\}/', $this->feeds->renderItems($new), $campaign->html),
+            'html' => (string) preg_replace_callback('/\{\{\s*rss_items\s*\}\}/', fn () => $this->feeds->renderItems($new), $campaign->html),
             'status' => CampaignStatus::Draft,
         ]);
         $child->save();

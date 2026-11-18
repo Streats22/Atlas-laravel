@@ -21,6 +21,7 @@ class AbTestController extends Controller
     public function update(Request $request, Campaign $campaign, AbTest $abTest): RedirectResponse
     {
         abort_unless($campaign->status->isEditable() && ! $campaign->isAutomation(), 409);
+        CampaignController::authorizeContentEdit($request, $campaign);
         $data = $request->validate([
             'enabled' => ['boolean'],
             'variable' => ['required_if:enabled,1', 'nullable', Rule::in(array_keys(AbTest::VARIABLES))],
@@ -62,6 +63,7 @@ class AbTestController extends Controller
     public function updateVariant(Request $request, Campaign $campaign, CampaignVariant $variant, EmailDesign $design, DesignRenderer $renderer): RedirectResponse
     {
         abort_unless($campaign->status->isEditable() && $variant->label !== 'A', 404);
+        CampaignController::authorizeContentEdit($request, $campaign);
         $data = $request->validate([
             'design' => ['nullable', 'json', 'max:1000000'],
             'html' => ['required_without:design', 'nullable', 'string', 'max:500000'],

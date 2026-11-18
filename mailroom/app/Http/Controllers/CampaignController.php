@@ -6,12 +6,14 @@ namespace App\Http\Controllers;
 
 use App\Builder\EmailDesign;
 use App\Enums\CampaignStatus;
+use App\Enums\Role;
 use App\Http\Requests\CampaignRequest;
 use App\Mail\CampaignMail;
 use App\Models\Audience;
 use App\Models\Campaign;
 use App\Models\Contact;
 use App\Models\EmailTemplate;
+use App\Models\User;
 use App\Services\CampaignChecklist;
 use App\Services\CampaignDispatcher;
 use App\Services\EmailRenderer;
@@ -105,9 +107,20 @@ class CampaignController extends Controller
     public function update(CampaignRequest $request, Campaign $campaign): RedirectResponse
     {
         abort_unless($campaign->status->isEditable(), 409, 'This campaign has already been sent.');
+        self::authorizeContentEdit($request, $campaign);
         $campaign->update($request->campaignData());
 
         return redirect()->route('campaigns.edit', $campaign)->with('status', 'Campaign saved.');
+    }
+
+    /** Authors edit drafts only: a scheduled or running campaign was approved by a Manager. */
+    public static function authorizeContentEdit(Request $request, Campaign $campaign): void
+    {
+        abort_if(
+            ! $request->user()->role->atLeast(Role::Manager) && $campaign->status !== CampaignStatus::Draft,
+            403,
+            'Only managers can change a scheduled campaign. Ask one to unschedule it first.',
+        );
     }
 
     public function destroy(Campaign $campaign): RedirectResponse
@@ -152,7 +165,9 @@ class CampaignController extends Controller
         $contact = ($contactId ? $campaign->audience->contacts()->find($contactId) : null)
             ?? $campaign->audience->contacts()->subscribed()->first()
             ?? new Contact(['email' => 'jane@example.com', 'first_name' => 'Jane', 'last_name' => 'Doe']);
-        $contact->token ??= 'preview';
+        // Previews and tests never carry a real contact token (it would let viewers unsubscribe people).
+        $contact = clone $contact;
+        $contact->token = 'preview';
         $contact->setRelation('audience', $campaign->audience);
 
         return $contact;
@@ -165,12 +180,19 @@ class CampaignController extends Controller
         if ($emails === []) {
             return back()->withErrors(['emails' => 'Enter at least one valid email address.']);
         }
+        // Authors may only send tests to team members, so the test button can't be used to spam.
+        if (! $request->user()->role->atLeast(Role::Manager)) {
+            $team = User::query()->pluck('email')->map(fn ($e) => strtolower($e))->all();
+            if (array_diff(array_map('strtolower', $emails), $team) !== []) {
+                return back()->withErrors(['emails' => 'Authors can only send tests to team members.']);
+            }
+        }
 
         foreach ($emails as $email) {
             $contact = $campaign->audience->contacts()->where('email', strtolower($email))->first()
                 ?? new Contact(['email' => $email, 'first_name' => 'Test']);
-            $contact->setRelation('audience', $campaign->audience);
-            $contact->token ??= 'preview';
+            $contact = (clone $contact)->setRelation('audience', $campaign->audience);
+            $contact->token = 'preview';
             Mail::to($email)->send(new CampaignMail($campaign, $contact));
         }
 

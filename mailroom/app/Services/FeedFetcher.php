@@ -23,8 +23,14 @@ final class FeedFetcher
     /** @return array{title:string, items:list<array{title:string, link:string, summary:string, date:?CarbonImmutable}>} */
     public function fetch(string $url): array
     {
-        $this->assertPublicUrl($url);
-        $response = Http::timeout(10)->withOptions(['allow_redirects' => false])->accept('application/rss+xml, application/atom+xml, application/xml, text/xml')->get($url);
+        $ip = $this->assertPublicUrl($url);
+        $parts = parse_url($url);
+        $port = $parts['port'] ?? (strtolower($parts['scheme']) === 'https' ? 443 : 80);
+        // Pin the connection to the address we just checked, so DNS can't change between check and fetch.
+        $response = Http::timeout(10)->withOptions([
+            'allow_redirects' => false,
+            'curl' => [CURLOPT_RESOLVE => ["{$parts['host']}:{$port}:".(str_contains($ip, ':') ? "[{$ip}]" : $ip)]],
+        ])->accept('application/rss+xml, application/atom+xml, application/xml, text/xml')->get($url);
         if (! $response->successful()) {
             throw new RuntimeException("Feed returned HTTP {$response->status()}.");
         }
@@ -84,21 +90,48 @@ final class FeedFetcher
         return $html;
     }
 
-    public function assertPublicUrl(string $url): void
+    /** Returns the vetted IP address to connect to. */
+    public function assertPublicUrl(string $url): string
     {
         $parts = parse_url($url);
         if (! in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) || empty($parts['host']) || isset($parts['user'])) {
             throw new RuntimeException('Only public http(s) feed URLs are allowed.');
         }
-        $ips = filter_var($parts['host'], FILTER_VALIDATE_IP) ? [$parts['host']] : (gethostbynamel($parts['host']) ?: []);
+        $host = trim($parts['host'], '[]');
+        $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : $this->resolve($host);
         if ($ips === []) {
             throw new RuntimeException('Feed host could not be resolved.');
         }
         foreach ($ips as $ip) {
-            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            if (! $this->isPublic($ip)) {
                 throw new RuntimeException('Feed URLs on private or internal networks are not allowed.');
             }
         }
+
+        return $ips[0];
+    }
+
+    /** @return list<string> A and AAAA records */
+    private function resolve(string $host): array
+    {
+        $records = @dns_get_record($host, DNS_A | DNS_AAAA) ?: [];
+        $ips = array_values(array_filter(array_map(fn ($r) => $r['ip'] ?? $r['ipv6'] ?? null, $records)));
+
+        return $ips ?: (gethostbynamel($host) ?: []);
+    }
+
+    private function isPublic(string $ip): bool
+    {
+        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+        // Ranges PHP's flags miss: carrier-grade NAT, IPv6 unique-local and IPv4-mapped addresses.
+        $long = ip2long($ip);
+        if ($long !== false && ($long & 0xFFC00000) === (ip2long('100.64.0.0') & 0xFFC00000)) {
+            return false;
+        }
+
+        return ! preg_match('/^(f[cd]|::ffff:)/i', $ip);
     }
 
     /** @return array{title:string, link:string, summary:string, date:?CarbonImmutable} */

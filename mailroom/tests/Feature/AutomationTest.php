@@ -13,6 +13,7 @@ use App\Services\AutomationBuilder;
 use App\Services\TagSync;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 class AutomationTest extends MailroomTestCase
 {
@@ -172,7 +173,7 @@ class AutomationTest extends MailroomTestCase
 
         $contact = $audience->contacts()->sole();
         $this->assertSame(ContactStatus::Pending, $contact->status);
-        $this->get("/confirm/{$contact->token}");
+        $this->post(URL::temporarySignedRoute('public.confirm.do', now()->addDay(), ['contact' => $contact->id]));
         $this->assertSame(1, $automation->runs()->count());
     }
 }

@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Enums\ContactStatus;
 use App\Mail\ConfirmSubscriptionMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 class SubscriptionTest extends MailroomTestCase
 {
@@ -22,7 +23,16 @@ class SubscriptionTest extends MailroomTestCase
         $this->assertSame(ContactStatus::Pending, $contact->status);
         Mail::assertSent(ConfirmSubscriptionMail::class);
 
-        $this->get("/confirm/{$contact->token}")->assertOk();
+        $url = null;
+        Mail::assertSent(ConfirmSubscriptionMail::class, function (ConfirmSubscriptionMail $m) use (&$url) {
+            $url = $m->content()->with['url'];
+
+            return true;
+        });
+        $this->get("/confirm/{$contact->id}")->assertForbidden(); // unsigned
+        $this->get($url)->assertOk()->assertSee('Yes, subscribe me');
+        $this->assertSame(ContactStatus::Pending, $contact->fresh()->status); // GET alone never confirms
+        $this->post(URL::temporarySignedRoute('public.confirm.do', now()->addDay(), ['contact' => $contact->id]))->assertOk();
         $this->assertSame(ContactStatus::Subscribed, $contact->fresh()->status);
     }
 
@@ -50,6 +60,19 @@ class SubscriptionTest extends MailroomTestCase
         $this->get("/u/{$contact->token}")->assertOk()->assertSee('Unsubscribe');
         $this->post("/u/{$contact->token}", ['List-Unsubscribe' => 'One-Click'])->assertOk();
         $this->assertSame(ContactStatus::Unsubscribed, $contact->fresh()->status);
+    }
+
+    public function test_form_never_resubscribes_or_overwrites_existing_contacts(): void
+    {
+        Mail::fake();
+        $audience = $this->audience(['double_opt_in' => false]);
+        $gone = $this->contact($audience, 'gone@x.test', ContactStatus::Unsubscribed, ['first_name' => 'Real']);
+
+        $this->post("/f/{$audience->public_id}", ['email' => 'gone@x.test', 'first_name' => 'Hacked'])->assertOk()->assertSee('Almost done');
+        $gone->refresh();
+        $this->assertSame(ContactStatus::Pending, $gone->status);
+        $this->assertSame('Real', $gone->first_name);
+        Mail::assertSent(ConfirmSubscriptionMail::class, 1);
     }
 
     public function test_unknown_tokens_404(): void

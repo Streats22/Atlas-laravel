@@ -23,6 +23,7 @@ class EnforceRole
         'audiences.export' => Role::Manager,
         'audiences.contacts.export' => Role::Manager,
         'reports.export' => Role::Manager,
+        'api.contacts' => Role::Manager, // bulk listing = export
     ];
 
     /** Write routes Authors may use. */

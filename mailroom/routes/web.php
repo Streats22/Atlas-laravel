@@ -31,7 +31,8 @@ Route::get('/f/{publicId}', [PublicSubscriptionController::class, 'form'])->name
 Route::get('/f/{publicId}/popup.js', [PublicSubscriptionController::class, 'popup'])->name('public.popup');
 Route::post('/f/{publicId}', [PublicSubscriptionController::class, 'subscribe'])
     ->middleware('throttle:10,1')->name('public.subscribe');
-Route::get('/confirm/{token}', [PublicSubscriptionController::class, 'confirm'])->name('public.confirm');
+Route::get('/confirm/{contact}', [PublicSubscriptionController::class, 'confirmPage'])->middleware('signed')->name('public.confirm');
+Route::post('/confirm/{contact}', [PublicSubscriptionController::class, 'confirm'])->middleware('signed')->name('public.confirm.do');
 Route::get('/u/{token}', [PublicSubscriptionController::class, 'unsubscribePage'])->name('public.unsubscribe');
 Route::post('/u/{token}', [PublicSubscriptionController::class, 'unsubscribe'])->name('public.unsubscribe.do');
 Route::post('/webhooks/{provider}/{secret}', [WebhookController::class, 'handle'])->middleware('throttle:600,1')->name('webhooks');
@@ -109,7 +110,7 @@ Route::middleware(['auth', 'role'])->group(function (): void {
     Route::prefix('campaigns/{campaign}')->name('campaigns.')->group(function (): void {
         Route::get('preview', [CampaignController::class, 'preview'])->name('preview');
         Route::get('review', [CampaignController::class, 'review'])->name('review');
-        Route::post('test', [CampaignController::class, 'test'])->name('test');
+        Route::post('test', [CampaignController::class, 'test'])->middleware('throttle:10,1')->name('test');
         Route::post('send', [CampaignController::class, 'send'])->name('send');
         Route::post('schedule', [CampaignController::class, 'schedule'])->name('schedule');
         Route::post('unschedule', [CampaignController::class, 'unschedule'])->name('unschedule');

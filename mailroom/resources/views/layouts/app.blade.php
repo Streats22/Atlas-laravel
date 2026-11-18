@@ -16,6 +16,7 @@
             <a href="{{ route('campaigns.index') }}" @class(['active' => request()->routeIs('campaigns.*')])>Campaigns</a>
             <a href="{{ route('templates.index') }}" @class(['active' => request()->routeIs('templates.*')])>Templates</a>
             <a href="{{ route('audiences.index') }}" @class(['active' => request()->routeIs('audiences.*')])>Audiences</a>
+            <a href="{{ route('settings.edit') }}" @class(['active' => request()->routeIs('settings.*')])>Settings</a>
         </nav>
         <form method="post" action="{{ route('logout') }}" class="logout">
             @csrf
@@ -24,6 +25,9 @@
         </form>
     </aside>
     <main class="main">
+        @if (! app(\App\Services\MailConfig::class)->isConfigured() && ! request()->routeIs('settings.*'))
+            <div class="flash flash-warn">Emails are only written to the log until you <a href="{{ route('settings.edit') }}">connect a sending provider</a>.</div>
+        @endif
         @include('partials.flash')
         @yield('content')
     </main>

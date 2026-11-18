@@ -11,6 +11,7 @@ use App\Http\Controllers\ContactImportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicSubscriptionController;
 use App\Http\Controllers\SegmentController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,10 @@ Route::middleware('auth')->group(function (): void {
         Route::get('export', [ContactImportController::class, 'export'])->name('export');
         Route::resource('segments', SegmentController::class)->except(['show']);
     });
+
+    Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::post('settings/test', [SettingsController::class, 'test'])->name('settings.test');
 
     Route::post('builder/preview', [BuilderController::class, 'preview'])->name('builder.preview');
     Route::get('media', [BuilderController::class, 'media'])->name('media.index');

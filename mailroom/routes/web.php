@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BuilderController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContactImportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicSubscriptionController;
 use App\Http\Controllers\SegmentController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,9 +46,15 @@ Route::middleware('auth')->group(function (): void {
         Route::resource('segments', SegmentController::class)->except(['show']);
     });
 
+    Route::post('builder/preview', [BuilderController::class, 'preview'])->name('builder.preview');
+    Route::get('media', [BuilderController::class, 'media'])->name('media.index');
+    Route::post('media', [BuilderController::class, 'upload'])->name('media.store');
+    Route::resource('templates', TemplateController::class)->only(['index', 'show', 'store', 'destroy']);
+
     Route::resource('campaigns', CampaignController::class);
     Route::prefix('campaigns/{campaign}')->name('campaigns.')->group(function (): void {
         Route::get('preview', [CampaignController::class, 'preview'])->name('preview');
+        Route::get('review', [CampaignController::class, 'review'])->name('review');
         Route::post('test', [CampaignController::class, 'test'])->name('test');
         Route::post('send', [CampaignController::class, 'send'])->name('send');
         Route::post('schedule', [CampaignController::class, 'schedule'])->name('schedule');

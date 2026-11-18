@@ -14,6 +14,7 @@
         <nav>
             <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>Dashboard</a>
             <a href="{{ route('campaigns.index') }}" @class(['active' => request()->routeIs('campaigns.*')])>Campaigns</a>
+            <a href="{{ route('templates.index') }}" @class(['active' => request()->routeIs('templates.*')])>Templates</a>
             <a href="{{ route('audiences.index') }}" @class(['active' => request()->routeIs('audiences.*')])>Audiences</a>
         </nav>
         <form method="post" action="{{ route('logout') }}" class="logout">

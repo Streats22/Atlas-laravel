@@ -8,6 +8,7 @@ use App\Models\Campaign;
 use App\Models\CampaignSend;
 use App\Models\Contact;
 use App\Services\EmailRenderer;
+use App\Services\PlainText;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -46,6 +47,12 @@ class CampaignMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(htmlString: app(EmailRenderer::class)->render($this->campaign, $this->contact, $this->send));
+        $html = app(EmailRenderer::class)->render($this->campaign, $this->contact, $this->send);
+
+        return new Content(
+            htmlString: $html,
+            text: 'emails.plain',
+            with: ['plainText' => app(PlainText::class)->fromHtml($html)],
+        );
     }
 }

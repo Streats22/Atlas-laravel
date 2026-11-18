@@ -14,13 +14,14 @@ class Campaign extends Model
 {
     protected $fillable = [
         'audience_id', 'segment_id', 'tag_id', 'name', 'subject', 'preview_text',
-        'from_name', 'from_email', 'html', 'status', 'scheduled_at', 'sent_at', 'recipients_count',
+        'from_name', 'from_email', 'html', 'design', 'status', 'scheduled_at', 'sent_at', 'recipients_count',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => CampaignStatus::class,
+            'design' => 'array',
             'scheduled_at' => 'datetime',
             'sent_at' => 'datetime',
         ];

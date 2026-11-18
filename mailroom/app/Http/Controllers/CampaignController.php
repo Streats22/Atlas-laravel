@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Builder\EmailDesign;
 use App\Enums\CampaignStatus;
 use App\Http\Requests\CampaignRequest;
 use App\Mail\CampaignMail;
 use App\Models\Audience;
 use App\Models\Campaign;
 use App\Models\Contact;
+use App\Models\EmailTemplate;
+use App\Services\CampaignChecklist;
 use App\Services\CampaignDispatcher;
 use App\Services\EmailRenderer;
 use App\Services\EmailTemplates;
+use App\Services\PlainText;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -44,13 +48,12 @@ class CampaignController extends Controller
             'audience_id' => $audience->id,
             'from_name' => $audience->from_name,
             'from_email' => $audience->from_email,
-            'html' => $templates->get((string) $request->query('template', 'simple')),
-        ]), $templates));
+        ] + $templates->start((string) $request->query('template', 'builder'))), $templates));
     }
 
     public function store(CampaignRequest $request): RedirectResponse
     {
-        $campaign = Campaign::query()->create($request->validated() + ['status' => CampaignStatus::Draft]);
+        $campaign = Campaign::query()->create($request->campaignData() + ['status' => CampaignStatus::Draft]);
 
         return redirect()->route('campaigns.edit', $campaign)->with('status', 'Draft saved.');
     }
@@ -88,7 +91,7 @@ class CampaignController extends Controller
     public function update(CampaignRequest $request, Campaign $campaign): RedirectResponse
     {
         abort_unless($campaign->status->isEditable(), 409, 'This campaign has already been sent.');
-        $campaign->update($request->validated());
+        $campaign->update($request->campaignData());
 
         return redirect()->route('campaigns.edit', $campaign)->with('status', 'Campaign saved.');
     }
@@ -101,17 +104,44 @@ class CampaignController extends Controller
         return redirect()->route('campaigns.index')->with('status', 'Campaign deleted.');
     }
 
-    /** Raw rendered email, shown inside a sandboxed iframe in the editor. */
-    public function preview(Campaign $campaign, EmailRenderer $renderer): Response
+    /** Raw rendered email, shown inside a sandboxed iframe. ?contact= renders as that contact, ?dark=1 simulates dark-mode inboxes. */
+    public function preview(Request $request, Campaign $campaign, EmailRenderer $renderer): Response
     {
-        $contact = $campaign->audience->contacts()->subscribed()->first()
+        $html = $renderer->render($campaign, $this->previewContact($campaign, $request->integer('contact')));
+        if ($request->boolean('dark')) {
+            // Approximates how Gmail/Outlook apps force dark mode: invert colours, keep images natural.
+            $style = '<style>html{filter:invert(1) hue-rotate(180deg);background:#fff}img{filter:invert(1) hue-rotate(180deg)}</style>';
+            $html = str_contains($html, '</head>') ? str_replace('</head>', $style.'</head>', $html) : $style.$html;
+        }
+
+        return response($html)
+            ->header('Content-Security-Policy', "script-src 'none'; frame-ancestors 'self'")
+            ->header('X-Content-Type-Options', 'nosniff');
+    }
+
+    public function review(Request $request, Campaign $campaign, CampaignChecklist $checklist, EmailRenderer $renderer, PlainText $plain): View
+    {
+        $contact = $this->previewContact($campaign, $request->integer('contact'));
+
+        return view('campaigns.review', [
+            'campaign' => $campaign->load('audience'),
+            'checks' => $checklist->check($campaign),
+            'contact' => $contact,
+            'contacts' => $campaign->audience->contacts()->subscribed()->orderBy('email')->limit(200)->get(['id', 'email']),
+            'subject' => $renderer->subject($campaign, $contact),
+            'plainText' => $plain->fromHtml($renderer->render($campaign, $contact)),
+        ]);
+    }
+
+    private function previewContact(Campaign $campaign, int $contactId): Contact
+    {
+        $contact = ($contactId ? $campaign->audience->contacts()->find($contactId) : null)
+            ?? $campaign->audience->contacts()->subscribed()->first()
             ?? new Contact(['email' => 'jane@example.com', 'first_name' => 'Jane', 'last_name' => 'Doe']);
         $contact->token ??= 'preview';
         $contact->setRelation('audience', $campaign->audience);
 
-        return response($renderer->render($campaign, $contact))
-            ->header('Content-Security-Policy', "script-src 'none'; frame-ancestors 'self'")
-            ->header('X-Content-Type-Options', 'nosniff');
+        return $contact;
     }
 
     public function test(Request $request, Campaign $campaign): RedirectResponse
@@ -133,8 +163,11 @@ class CampaignController extends Controller
         return back()->with('status', 'Test email sent to '.implode(', ', $emails).'.');
     }
 
-    public function send(Campaign $campaign, CampaignDispatcher $dispatcher): RedirectResponse
+    public function send(Campaign $campaign, CampaignDispatcher $dispatcher, CampaignChecklist $checklist): RedirectResponse
     {
+        if (! $checklist->canSend($campaign)) {
+            return redirect()->route('campaigns.review', $campaign)->withErrors(['send' => 'Fix the errors in the checklist before sending.']);
+        }
         $count = $dispatcher->dispatch($campaign);
 
         return redirect()->route('campaigns.show', $campaign)->with('status', "Campaign queued for {$count} recipients.");
@@ -174,6 +207,10 @@ class CampaignController extends Controller
             'campaign' => $campaign,
             'audiences' => Audience::query()->with(['segments', 'tags'])->orderBy('name')->get(),
             'templates' => $templates->names(),
+            'savedTemplates' => EmailTemplate::query()->latest()->get(['id', 'name']),
+            'blockTypes' => EmailDesign::BLOCKS,
+            'blockDefaults' => collect(EmailDesign::BLOCKS)->keys()->mapWithKeys(fn ($t) => [$t => app(EmailDesign::class)->defaults($t)]),
+            'socialNetworks' => EmailDesign::SOCIAL,
             'mergeTags' => EmailRenderer::MERGE_TAGS,
         ];
     }

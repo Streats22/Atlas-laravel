@@ -19,8 +19,11 @@
 
     @unless ($campaign->exists)
         <nav class="tabs" aria-label="Start from a template">
-            @foreach ($templates as $key => $label)
-                <a href="{{ route('campaigns.create', ['template' => $key, 'audience' => $campaign->audience_id]) }}" @class(['active' => request('template', 'simple') === $key])>{{ $label }}</a>
+            @foreach (['builder' => 'Drag & drop'] + $templates as $key => $label)
+                <a href="{{ route('campaigns.create', ['template' => $key, 'audience' => $campaign->audience_id]) }}" @class(['active' => request('template', 'builder') === $key])>{{ $label }}</a>
+            @endforeach
+            @foreach ($savedTemplates as $t)
+                <a href="{{ route('campaigns.create', ['template' => 'saved:' . $t->id, 'audience' => $campaign->audience_id]) }}" @class(['active' => request('template') === 'saved:' . $t->id])>★ {{ $t->name }}</a>
             @endforeach
         </nav>
     @endunless
@@ -65,27 +68,65 @@
             <label>Preview text <small class="muted">(shown after the subject in most inboxes)</small><input name="preview_text" value="{{ old('preview_text', $campaign->preview_text) }}" maxlength="190"></label>
         </section>
 
-        <section class="card">
+        @php($useBuilder = old('design', $campaign->design) !== null)
+        <section class="card" id="content-card">
             <div class="row-between">
                 <h2>Content</h2>
-                <div class="chips" aria-label="Insert merge tag">
-                    @foreach ($mergeTags as $tag)<button type="button" class="chip" data-tag="{{ $tag }}">{{ $tag }}</button>@endforeach
+                <div class="row">
+                    <div class="chips" aria-label="Insert merge tag">
+                        @foreach ($mergeTags as $tag)<button type="button" class="chip" data-tag="{{ $tag }}">{{ $tag }}</button>@endforeach
+                    </div>
+                    @if ($useBuilder)
+                        <button type="button" class="btn btn-ghost small" id="to-code">Switch to code editor</button>
+                    @else
+                        <button type="button" class="btn btn-ghost small" id="to-builder" data-starter='@json(app(\App\Builder\EmailDesign::class)->starter())'>Use drag &amp; drop builder</button>
+                    @endif
                 </div>
             </div>
-            <div class="split">
-                <textarea name="html" id="html" spellcheck="false" required>{{ old('html', $campaign->html) }}</textarea>
-                <div class="preview-wrap">
-                    <div class="device-toggle"><button type="button" data-width="100%" class="active">Desktop</button><button type="button" data-width="390px">Mobile</button></div>
-                    <iframe id="preview" title="Email preview" sandbox=""></iframe>
+
+            @if ($useBuilder)
+                @php($designValue = old('design', json_encode($campaign->design)))
+                <input type="hidden" name="design" id="design" value="{{ is_string($designValue) ? $designValue : json_encode($designValue) }}">
+                <div class="builder" id="builder"
+                     data-preview-url="{{ route('builder.preview') }}"
+                     data-media-url="{{ route('media.index') }}"
+                     data-upload-url="{{ route('media.store') }}"
+                     data-blocks='@json($blockTypes)'
+                     data-defaults='@json($blockDefaults)'
+                     data-social='@json($socialNetworks)'>
+                    <aside class="builder-palette" aria-label="Blocks">
+                        <h3>Blocks</h3>
+                        @foreach ($blockTypes as $type => $label)
+                            <button type="button" class="palette-item" draggable="true" data-add="{{ $type }}">{{ $label }}</button>
+                        @endforeach
+                        <h3>Layout</h3>
+                        <ol class="outline" id="outline" aria-label="Email structure"></ol>
+                    </aside>
+                    <div class="builder-canvas">
+                        <div class="device-toggle"><button type="button" data-width="100%" class="active">Desktop</button><button type="button" data-width="390px">Mobile</button></div>
+                        <iframe id="builder-preview" title="Email design" sandbox="allow-same-origin"></iframe>
+                    </div>
+                    <aside class="builder-inspector" id="inspector" aria-label="Block settings"></aside>
                 </div>
-            </div>
+            @else
+                <div class="split">
+                    <textarea name="html" id="html" spellcheck="false" required>{{ old('html', $campaign->html) }}</textarea>
+                    <div class="preview-wrap">
+                        <div class="device-toggle"><button type="button" data-width="100%" class="active">Desktop</button><button type="button" data-width="390px">Mobile</button></div>
+                        <iframe id="preview" title="Email preview" sandbox=""></iframe>
+                    </div>
+                </div>
+            @endif
             <p class="muted small">Use <code>@{{ first_name | fallback }}</code> for a fallback value. Links are tracked automatically; an unsubscribe footer is always added.</p>
         </section>
-        <div class="actions"><button class="btn btn-primary">Save</button></div>
+        <div class="actions">
+            @if ($campaign->exists)<a class="btn" href="{{ route('campaigns.review', $campaign) }}">Preview &amp; checklist</a>@endif
+            <button class="btn btn-primary">Save</button>
+        </div>
     </form>
 
     @if ($campaign->exists)
-        <div class="grid-3">
+        <div class="grid-2">
             <form method="post" action="{{ route('campaigns.test', $campaign) }}" class="card stack">
                 @csrf
                 <h2>Send a test</h2>
@@ -101,6 +142,13 @@
                     <button class="btn btn-ghost" formaction="{{ route('campaigns.unschedule', $campaign) }}" formnovalidate>Unschedule</button>
                 @endif
             </form>
+            <form method="post" action="{{ route('templates.store') }}" class="card stack">
+                @csrf
+                <input type="hidden" name="campaign_id" value="{{ $campaign->id }}">
+                <h2>Save as template</h2>
+                <label>Template name <input name="name" required maxlength="120" value="{{ $campaign->name }}"></label>
+                <button class="btn">Save template</button>
+            </form>
             <form method="post" action="{{ route('campaigns.send', $campaign) }}" class="card stack" onsubmit="return confirm('Send this campaign to {{ $recipientCount ?? 0 }} recipients now?')">
                 @csrf
                 <h2>Send now</h2>
@@ -113,4 +161,5 @@
 
 @push('scripts')
 <script src="{{ asset('js/campaign-editor.js') }}"></script>
+<script src="{{ asset('js/email-builder.js') }}"></script>
 @endpush

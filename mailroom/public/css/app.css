@@ -244,3 +244,4 @@ label.inline select { width: auto; max-width: 220px; }
 td.good { color: var(--ok); font-weight: 600; }
 td.bad { color: var(--danger); }
 .histogram.growth { height: 90px; }
+.inline-form { display: inline; margin-left: 8px; }

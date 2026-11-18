@@ -8,7 +8,8 @@
             <span class="badge badge-{{ $automation->isActive() ? 'sent' : ($automation->status === 'paused' ? 'pending' : 'draft') }}">{{ ucfirst($automation->status) }}</span>
             <span class="muted small">{{ $automation->audience->name }}</span>
         </div>
-        <form method="post" action="{{ route('automations.status', $automation) }}">
+        @if (auth()->user()->mayUse('automations.status', 'POST'))
+<form method="post" action="{{ route('automations.status', $automation) }}">
             @csrf
             @if ($automation->isActive())
                 <input type="hidden" name="status" value="paused"><button class="btn">Pause</button>
@@ -16,6 +17,7 @@
                 <input type="hidden" name="status" value="active"><button class="btn btn-primary">Turn on</button>
             @endif
         </form>
+@endif
     </header>
 
     <div class="stats">

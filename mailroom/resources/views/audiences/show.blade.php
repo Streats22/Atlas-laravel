@@ -28,8 +28,8 @@
             </select>
             <button class="btn">Filter</button>
             <span class="grow"></span>
-            <a class="btn btn-ghost" href="{{ route('audiences.export', $audience) }}">Export CSV</a>
-            <a class="btn btn-primary" href="{{ route('audiences.contacts.create', $audience) }}">Add contact</a>
+            @if (auth()->user()->mayUse('audiences.export'))<a class="btn btn-ghost" href="{{ route('audiences.export', $audience) }}">Export CSV</a>@endif
+            @if (auth()->user()->mayUse('audiences.contacts.store', 'POST'))<a class="btn btn-primary" href="{{ route('audiences.contacts.create', $audience) }}">Add contact</a>@endif
         </form>
 
         @if ($contacts->isEmpty())

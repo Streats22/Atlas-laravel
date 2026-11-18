@@ -10,6 +10,9 @@ use Illuminate\Support\Str;
 
 class CampaignSend extends Model
 {
+    /** Mirror the column defaults so new models behave like freshly loaded ones. */
+    protected $attributes = ['open_count' => 0, 'click_count' => 0];
+
     protected $fillable = [
         'contact_id', 'variant_id', 'sent_at', 'failed_at', 'error', 'opened_at', 'open_count',
         'clicked_at', 'click_count', 'unsubscribed_at', 'bounced_at', 'bounce_type', 'complained_at', 'client', 'device',

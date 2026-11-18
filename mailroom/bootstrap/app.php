@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Signup forms are embedded on other sites and mailbox providers POST one-click unsubscribes.
         $middleware->validateCsrfTokens(except: ['f/*', 'u/*', 'webhooks/*']);
         $middleware->redirectGuestsTo('/login');
+        $middleware->alias(['role' => EnforceRole::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -148,7 +148,8 @@
                 <button class="btn">Send test</button>
             </form>
             @unless ($campaign->isAutomation())
-            <form method="post" action="{{ route('campaigns.schedule', $campaign) }}" class="card stack">
+            @if (auth()->user()->mayUse('campaigns.schedule', 'POST'))
+<form method="post" action="{{ route('campaigns.schedule', $campaign) }}" class="card stack">
                 @csrf
                 <h2>Schedule</h2>
                 <label>Send at <input type="datetime-local" name="scheduled_at" value="{{ $campaign->scheduled_at?->format('Y-m-d\TH:i') }}" required></label>
@@ -157,6 +158,7 @@
                     <button class="btn btn-ghost" formaction="{{ route('campaigns.unschedule', $campaign) }}" formnovalidate>Unschedule</button>
                 @endif
             </form>
+@endif
             <form method="post" action="{{ route('templates.store') }}" class="card stack">
                 @csrf
                 <input type="hidden" name="campaign_id" value="{{ $campaign->id }}">
@@ -164,12 +166,14 @@
                 <label>Template name <input name="name" required maxlength="120" value="{{ $campaign->name }}"></label>
                 <button class="btn">Save template</button>
             </form>
-            <form method="post" action="{{ route('campaigns.send', $campaign) }}" class="card stack" onsubmit="return confirm('Send this campaign to {{ $recipientCount ?? 0 }} recipients now?')">
+            @if (auth()->user()->mayUse('campaigns.send', 'POST'))
+<form method="post" action="{{ route('campaigns.send', $campaign) }}" class="card stack" onsubmit="return confirm('Send this campaign to {{ $recipientCount ?? 0 }} recipients now?')">
                 @csrf
                 <h2>Send now</h2>
                 <p class="muted">Save your changes first. Sending can't be undone.</p>
                 <button class="btn btn-primary" @disabled(($recipientCount ?? 0) === 0)>Send to {{ number_format($recipientCount ?? 0) }}</button>
             </form>
+@endif
             @endunless
         </div>
     @endif

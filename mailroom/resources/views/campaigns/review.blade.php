@@ -66,13 +66,15 @@
                 <button class="btn">Send test</button>
             </form>
             @if ($campaign->status->isEditable() && ! $campaign->isAutomation())
-                <form method="post" action="{{ route('campaigns.send', $campaign) }}" class="card stack" onsubmit="return confirm('Send this campaign now? This cannot be undone.')">
+                @if (auth()->user()->mayUse('campaigns.send', 'POST'))
+<form method="post" action="{{ route('campaigns.send', $campaign) }}" class="card stack" onsubmit="return confirm('Send this campaign now? This cannot be undone.')">
                     @csrf
                     <h2>Ready?</h2>
                     @php($blocked = collect($checks)->contains('level', 'error'))
                     <button class="btn btn-primary" @disabled($blocked)>Send now</button>
                     @if ($blocked)<p class="muted small">Fix the red items first.</p>@endif
                 </form>
+@endif
             @endif
         </div>
     </div>

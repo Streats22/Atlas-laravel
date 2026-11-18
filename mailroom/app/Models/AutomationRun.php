@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AutomationRun extends Model
 {
+    /** Mirror the column defaults so new models behave like freshly loaded ones. */
+    protected $attributes = ['status' => 'active', 'position' => 0];
+
     protected $fillable = ['contact_id', 'position', 'status', 'next_run_at', 'completed_at'];
 
     protected function casts(): array

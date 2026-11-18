@@ -18,16 +18,19 @@
             <a href="{{ route('templates.index') }}" @class(['active' => request()->routeIs('templates.*')])>Templates</a>
             <a href="{{ route('audiences.index') }}" @class(['active' => request()->routeIs('audiences.*')])>Audiences</a>
             <a href="{{ route('reports.index') }}" @class(['active' => request()->routeIs('reports.*')])>Reports</a>
-            <a href="{{ route('settings.edit') }}" @class(['active' => request()->routeIs('settings.*')])>Settings</a>
+            @if (auth()->user()->mayUse('settings.edit'))
+                <a href="{{ route('users.index') }}" @class(['active' => request()->routeIs('users.*')])>Users</a>
+                <a href="{{ route('settings.edit') }}" @class(['active' => request()->routeIs('settings.*')])>Settings</a>
+            @endif
         </nav>
         <form method="post" action="{{ route('logout') }}" class="logout">
             @csrf
-            <span class="muted small">{{ auth()->user()->name }}</span>
+            <a class="small" href="{{ route('profile.edit') }}">{{ auth()->user()->name }}</a>
             <button class="link">Log out</button>
         </form>
     </aside>
     <main class="main">
-        @if (! app(\App\Services\MailConfig::class)->isConfigured() && ! request()->routeIs('settings.*'))
+        @if (! app(\App\Services\MailConfig::class)->isConfigured() && ! request()->routeIs('settings.*') && auth()->user()->mayUse('settings.edit'))
             <div class="flash flash-warn">Emails are only written to the log until you <a href="{{ route('settings.edit') }}">connect a sending provider</a>.</div>
         @endif
         @include('partials.flash')

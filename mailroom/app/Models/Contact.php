@@ -18,6 +18,9 @@ class Contact extends Model
 {
     use HasFactory;
 
+    /** Mirror the column defaults so new models behave like freshly loaded ones. */
+    protected $attributes = ['status' => 'subscribed', 'source' => 'manual', 'soft_bounces' => 0];
+
     protected $fillable = [
         'email', 'first_name', 'last_name', 'fields', 'notes', 'status', 'source',
         'subscribed_at', 'confirmed_at', 'unsubscribed_at', 'consent_at', 'consent_text', 'signup_ip', 'soft_bounces',

@@ -9,5 +9,6 @@
         <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
         <label class="check"><input type="checkbox" name="remember" value="1"> Remember me</label>
         <button class="btn btn-primary">Log in</button>
+        <a class="small" href="{{ route('password.request') }}">Forgot your password?</a>
     </form>
 @endsection

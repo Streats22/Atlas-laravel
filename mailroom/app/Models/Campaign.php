@@ -13,9 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Campaign extends Model
 {
+    /** Mirror the column defaults so new models behave like freshly loaded ones. */
+    protected $attributes = ['kind' => 'regular', 'status' => 'draft', 'recipients_count' => 0, 'optimize_send_time' => false];
+
     protected $fillable = [
         'kind', 'audience_id', 'segment_id', 'tag_id', 'name', 'subject', 'preview_text',
-        'from_name', 'from_email', 'html', 'design', 'ab_test', 'status', 'scheduled_at', 'sent_at', 'recipients_count',
+        'from_name', 'from_email', 'html', 'design', 'ab_test', 'status', 'scheduled_at', 'optimize_send_time', 'sent_at', 'recipients_count',
     ];
 
     protected function casts(): array
@@ -25,6 +28,7 @@ class Campaign extends Model
             'design' => 'array',
             'ab_test' => 'array',
             'scheduled_at' => 'datetime',
+            'optimize_send_time' => 'boolean',
             'sent_at' => 'datetime',
         ];
     }

@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Automation extends Model
 {
+    /** Mirror the column defaults so new models behave like freshly loaded ones. */
+    protected $attributes = ['status' => 'draft'];
+
     protected $fillable = ['audience_id', 'name', 'trigger', 'trigger_value', 'status'];
 
     protected function casts(): array

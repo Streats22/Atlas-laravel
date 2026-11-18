@@ -18,9 +18,13 @@ final class CampaignChecklist
         };
 
         $recipients = $campaign->recipients()->count();
-        $recipients > 0
-            ? $add('ok', 'Recipients', number_format($recipients).' subscribed contacts will receive this campaign.')
-            : $add('error', 'Recipients', 'Nobody matches the selected audience, segment and tag.');
+        if ($campaign->isAutomation()) {
+            $add('ok', 'Recipients', 'Sent by an automation when contacts reach this step.');
+        } elseif ($recipients > 0) {
+            $add('ok', 'Recipients', number_format($recipients).' subscribed contacts will receive this campaign.');
+        } else {
+            $add('error', 'Recipients', 'Nobody matches the selected audience, segment and tag.');
+        }
 
         $add('ok', 'From', "{$campaign->from_name} <{$campaign->from_email}>");
 

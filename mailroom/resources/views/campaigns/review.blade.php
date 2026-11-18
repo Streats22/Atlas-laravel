@@ -65,7 +65,7 @@
                 <label>Email addresses <small class="muted">(comma-separated, max 5)</small><input name="emails" value="{{ old('emails', auth()->user()->email) }}"></label>
                 <button class="btn">Send test</button>
             </form>
-            @if ($campaign->status->isEditable())
+            @if ($campaign->status->isEditable() && ! $campaign->isAutomation())
                 <form method="post" action="{{ route('campaigns.send', $campaign) }}" class="card stack" onsubmit="return confirm('Send this campaign now? This cannot be undone.')">
                     @csrf
                     <h2>Ready?</h2>

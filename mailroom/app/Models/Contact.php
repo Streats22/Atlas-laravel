@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ContactStatus;
+use App\Services\AutomationEngine;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,15 @@ class Contact extends Model
 
     protected static function booted(): void
     {
+        // Imports never trigger automations, so a bulk upload can't send a welcome series to everyone.
+        static::saved(function (Contact $contact): void {
+            $becameSubscribed = $contact->status === ContactStatus::Subscribed
+                && ($contact->wasRecentlyCreated || $contact->wasChanged('status'));
+            if ($becameSubscribed && $contact->source !== 'import') {
+                app(AutomationEngine::class)->onSubscribed($contact);
+            }
+        });
+
         static::creating(function (Contact $contact): void {
             $contact->token ??= Str::random(40);
             $contact->email = Str::lower(trim($contact->email));

@@ -193,3 +193,32 @@ label.inline select { width: auto; max-width: 220px; }
 .flash-warn { background: var(--warn-soft); color: var(--warn); }
 .flash-warn a { color: inherit; text-decoration: underline; }
 .smtp-fields[hidden] { display: none; }
+
+/* Automations */
+.presets { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.presets legend { font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
+.preset { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-weight: 400; cursor: pointer; }
+.preset:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.preset span { display: grid; }
+.trigger-tag[hidden] { display: none; }
+.journey { display: grid; justify-items: center; gap: 0; }
+.journey-node { width: min(460px, 100%); background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; }
+.node-kind { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.trigger-node { border-left-color: var(--ok); }
+.node-wait { border-left-color: var(--warn); }
+.node-tag, .node-untag { border-left-color: var(--muted); }
+.end-node { border-left-color: var(--border); text-align: center; }
+.node-tools { gap: 6px; }
+.node-tools form { display: inline; }
+.node-tools button:disabled { opacity: .3; cursor: default; }
+.journey-add { display: grid; justify-items: center; position: relative; padding: 6px 0; }
+.journey-add::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 2px solid var(--border); }
+.journey-add summary { list-style: none; position: relative; width: 28px; height: 28px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border); display: grid; place-items: center; cursor: pointer; color: var(--muted); font-weight: 700; }
+.journey-add summary::-webkit-details-marker { display: none; }
+.journey-add details[open] summary { border-color: var(--accent); color: var(--accent); }
+.add-menu { position: relative; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 8px; margin-top: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.w-num { width: 90px !important; }
+.w-tag { width: 200px !important; }
+.journey-node .row { flex-wrap: nowrap; }
+.journey-node .row input, .journey-node .row select { width: auto; }
+.journey-add details { display: grid; justify-items: center; }

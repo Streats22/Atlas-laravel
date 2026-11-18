@@ -3,14 +3,18 @@
 @section('content')
     <header class="page-head">
         <div>
-            <a class="muted small" href="{{ route('campaigns.index') }}">← Campaigns</a>
+            @if ($campaign->isAutomation())
+                <a class="muted small" href="{{ route('automations.show', $campaign->automationStep->automation_id) }}">← Back to automation</a>
+            @else
+                <a class="muted small" href="{{ route('campaigns.index') }}">← Campaigns</a>
+            @endif
             <h1>{{ $campaign->exists ? $campaign->name : 'New campaign' }}</h1>
             @if ($campaign->exists)
                 <span class="badge badge-{{ $campaign->status->value }}">{{ $campaign->status->label() }}</span>
                 @if ($campaign->scheduled_at) <span class="muted small">for {{ $campaign->scheduled_at->format('M j, Y H:i') }}</span> @endif
             @endif
         </div>
-        @if ($campaign->exists)
+        @if ($campaign->exists && ! $campaign->isAutomation())
             <form method="post" action="{{ route('campaigns.destroy', $campaign) }}" onsubmit="return confirm('Delete this campaign?')">
                 @csrf @method('delete') <button class="btn btn-ghost danger">Delete</button>
             </form>
@@ -34,6 +38,11 @@
         <section class="card stack">
             <h2>Setup</h2>
             <label>Campaign name <small class="muted">(internal)</small><input name="name" value="{{ old('name', $campaign->name) }}" required maxlength="150"></label>
+            @if ($campaign->isAutomation())
+                <input type="hidden" name="audience_id" id="audience" value="{{ $campaign->audience_id }}">
+                <select id="segment" hidden></select><select id="tag" hidden></select>
+                <p class="muted small">This email is part of an automation and is sent to contacts when they reach its step.</p>
+            @else
             <div class="grid-2">
                 <label>Audience
                     <select name="audience_id" id="audience" required>
@@ -60,6 +69,7 @@
                     <div class="recipients"><strong>{{ number_format($recipientCount) }}</strong> subscribed recipients<br><small class="muted">at last save</small></div>
                 @endisset
             </div>
+            @endif
             <div class="grid-2">
                 <label>From name <input name="from_name" value="{{ old('from_name', $campaign->from_name) }}" required maxlength="120"></label>
                 <label>From email <input type="email" name="from_email" value="{{ old('from_email', $campaign->from_email) }}" required></label>
@@ -133,6 +143,7 @@
                 <label>Email addresses <small class="muted">(comma-separated, max 5)</small><input name="emails" value="{{ old('emails', auth()->user()->email) }}"></label>
                 <button class="btn">Send test</button>
             </form>
+            @unless ($campaign->isAutomation())
             <form method="post" action="{{ route('campaigns.schedule', $campaign) }}" class="card stack">
                 @csrf
                 <h2>Schedule</h2>
@@ -155,6 +166,7 @@
                 <p class="muted">Save your changes first. Sending can't be undone.</p>
                 <button class="btn btn-primary" @disabled(($recipientCount ?? 0) === 0)>Send to {{ number_format($recipientCount ?? 0) }}</button>
             </form>
+            @endunless
         </div>
     @endif
 @endsection

@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Campaign extends Model
 {
     protected $fillable = [
-        'audience_id', 'segment_id', 'tag_id', 'name', 'subject', 'preview_text',
+        'kind', 'audience_id', 'segment_id', 'tag_id', 'name', 'subject', 'preview_text',
         'from_name', 'from_email', 'html', 'design', 'status', 'scheduled_at', 'sent_at', 'recipients_count',
     ];
 
@@ -45,6 +46,16 @@ class Campaign extends Model
     public function sends(): HasMany
     {
         return $this->hasMany(CampaignSend::class);
+    }
+
+    public function automationStep(): HasOne
+    {
+        return $this->hasOne(AutomationStep::class);
+    }
+
+    public function isAutomation(): bool
+    {
+        return $this->kind === 'automation';
     }
 
     public function links(): HasMany

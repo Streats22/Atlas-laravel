@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\BuilderController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ContactController;
@@ -55,6 +56,16 @@ Route::middleware('auth')->group(function (): void {
     Route::get('media', [BuilderController::class, 'media'])->name('media.index');
     Route::post('media', [BuilderController::class, 'upload'])->name('media.store');
     Route::resource('templates', TemplateController::class)->only(['index', 'show', 'store', 'destroy']);
+
+    Route::resource('automations', AutomationController::class)->except(['edit']);
+    Route::scopeBindings()->prefix('automations/{automation}')->name('automations.')->group(function (): void {
+        Route::post('status', [AutomationController::class, 'status'])->name('status');
+        Route::post('enroll', [AutomationController::class, 'enroll'])->name('enroll');
+        Route::post('steps', [AutomationController::class, 'addStep'])->name('steps.store');
+        Route::put('steps/{step}', [AutomationController::class, 'updateStep'])->name('steps.update');
+        Route::post('steps/{step}/move', [AutomationController::class, 'moveStep'])->name('steps.move');
+        Route::delete('steps/{step}', [AutomationController::class, 'deleteStep'])->name('steps.destroy');
+    });
 
     Route::resource('campaigns', CampaignController::class);
     Route::prefix('campaigns/{campaign}')->name('campaigns.')->group(function (): void {

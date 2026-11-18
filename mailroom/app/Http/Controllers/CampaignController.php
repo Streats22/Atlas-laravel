@@ -30,7 +30,7 @@ class CampaignController extends Controller
         $status = CampaignStatus::tryFrom((string) $request->query('status'));
 
         return view('campaigns.index', [
-            'campaigns' => Campaign::query()->with('audience')
+            'campaigns' => Campaign::query()->with('audience')->where('kind', 'regular')
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->latest()->paginate(20)->withQueryString(),
             'status' => $status,

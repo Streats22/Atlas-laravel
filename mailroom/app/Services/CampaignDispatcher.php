@@ -17,6 +17,7 @@ final class CampaignDispatcher
     {
         $claimed = Campaign::query()
             ->whereKey($campaign->id)
+            ->where('kind', 'regular')
             ->whereIn('status', [CampaignStatus::Draft, CampaignStatus::Scheduled])
             ->update(['status' => CampaignStatus::Sending]);
 

@@ -24,7 +24,7 @@ class DashboardController extends Controller
             'sent' => $sent,
             'openRate' => $sent ? round(CampaignSend::query()->whereNotNull('opened_at')->count() / $sent * 100, 1) : 0,
             'clickRate' => $sent ? round(CampaignSend::query()->whereNotNull('clicked_at')->count() / $sent * 100, 1) : 0,
-            'recent' => Campaign::query()->with('audience')->latest()->limit(5)->get(),
+            'recent' => Campaign::query()->with('audience')->where('kind', 'regular')->latest()->limit(5)->get(),
         ]);
     }
 }

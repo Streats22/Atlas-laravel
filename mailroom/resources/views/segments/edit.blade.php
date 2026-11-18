@@ -15,6 +15,7 @@
                 <div class="condition" @if ($c['field'] === '') data-template hidden @endif>
                     <select name="conditions[{{ $i }}][field]" aria-label="Field"><option value="">—</option>
                         @foreach (\App\Services\SegmentQuery::FIELDS as $k => $label)<option value="{{ $k }}" @selected($c['field'] === $k)>{{ $label }}</option>@endforeach
+                        @foreach ($audience->fields as $f)<option value="field:{{ $f->key }}" @selected($c['field'] === 'field:' . $f->key)>{{ $f->label }}</option>@endforeach
                     </select>
                     <select name="conditions[{{ $i }}][operator]" aria-label="Operator">
                         @foreach (\App\Services\SegmentQuery::OPERATORS as $k => $label)<option value="{{ $k }}" @selected($c['operator'] === $k)>{{ $label }}</option>@endforeach

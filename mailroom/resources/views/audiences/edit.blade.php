@@ -9,6 +9,8 @@
         <label>Default from name <input name="from_name" value="{{ old('from_name', $audience->from_name) }}" required maxlength="120"></label>
         <label>Default from email <input type="email" name="from_email" value="{{ old('from_email', $audience->from_email) }}" required></label>
         <label class="check"><input type="checkbox" name="double_opt_in" value="1" @checked(old('double_opt_in', $audience->double_opt_in))> Require double opt-in for signup forms</label>
+        <label class="check"><input type="checkbox" name="gdpr_enabled" value="1" @checked(old('gdpr_enabled', $audience->gdpr_enabled))> Ask for GDPR marketing consent on signup forms</label>
+        <label>Consent text <textarea name="gdpr_text" rows="3" maxlength="500">{{ old('gdpr_text', $audience->gdpr_text ?? 'I agree to receive emails from ' . ($audience->name ?: 'us') . ' and know I can unsubscribe at any time.') }}</textarea></label>
         <div class="row"><button class="btn btn-primary">Save</button></div>
     </form>
     @if ($audience->exists)

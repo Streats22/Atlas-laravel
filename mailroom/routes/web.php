@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AbTestController;
 use App\Http\Controllers\AudienceController;
+use App\Http\Controllers\AudienceFieldController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\BuilderController;
@@ -43,6 +44,11 @@ Route::middleware('auth')->group(function (): void {
     Route::scopeBindings()->prefix('audiences/{audience}')->name('audiences.')->group(function (): void {
         Route::resource('contacts', ContactController::class)->except(['index', 'show']);
         Route::post('contacts/bulk', [ContactController::class, 'bulk'])->name('contacts.bulk');
+        Route::get('contacts/{contact}/export', [ContactController::class, 'export'])->name('contacts.export');
+        Route::get('fields', [AudienceFieldController::class, 'index'])->name('fields.index');
+        Route::post('fields', [AudienceFieldController::class, 'store'])->name('fields.store');
+        Route::put('fields/{field}', [AudienceFieldController::class, 'update'])->name('fields.update');
+        Route::delete('fields/{field}', [AudienceFieldController::class, 'destroy'])->name('fields.destroy');
         Route::get('import', [ContactImportController::class, 'create'])->name('import');
         Route::post('import', [ContactImportController::class, 'store'])->name('import.store');
         Route::get('export', [ContactImportController::class, 'export'])->name('export');

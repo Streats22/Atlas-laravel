@@ -10,6 +10,12 @@
             <label>First name <input name="first_name" value="{{ old('first_name') }}" autocomplete="given-name"></label>
             <label>Last name <input name="last_name" value="{{ old('last_name') }}" autocomplete="family-name"></label>
         </div>
+        @foreach ($audience->fields->where('show_on_form', true) as $field)
+            @include('partials.field-input', ['field' => $field, 'value' => old('fields.' . $field->key)])
+        @endforeach
+        @if ($audience->gdpr_enabled)
+            <label class="check consent"><input type="checkbox" name="consent" value="1" required> {{ $audience->gdpr_text }}</label>
+        @endif
         <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
         <button class="btn btn-primary">Subscribe</button>
         <p class="muted small">You can unsubscribe at any time with the link in every email.</p>

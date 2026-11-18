@@ -78,6 +78,23 @@ final class SegmentQuery
         $value = (string) ($c['value'] ?? '');
         $this->assertValid($field, $op);
 
+        if (str_starts_with($field, 'field:')) {
+            // Custom field values live in the contacts.fields JSON column; the key is regex-validated.
+            $column = 'fields->'.substr($field, 6);
+            match ($op) {
+                'is' => $q->where($column, $value),
+                'is_not' => $q->where(fn (Builder $w) => $w->where($column, '!=', $value)->orWhereNull($column)),
+                'contains' => $q->whereLike($column, "%{$value}%"),
+                'starts_with' => $q->whereLike($column, "{$value}%"),
+                'ends_with' => $q->whereLike($column, "%{$value}"),
+                'before' => $q->where($column, '<', $value),
+                'after' => $q->where($column, '>', $value),
+                'within_days' => $q->where($column, '>=', now()->subDays(max(0, (int) $value))->toDateString()),
+            };
+
+            return;
+        }
+
         if ($field === 'tag') {
             $has = fn (Builder $t) => $t->where('name', $value);
             $op === 'is_not' ? $q->whereDoesntHave('tags', $has) : $q->whereHas('tags', $has);
@@ -118,6 +135,13 @@ final class SegmentQuery
 
     private function assertValid(string $field, string $op): void
     {
+        if (str_starts_with($field, 'field:')) {
+            if (! preg_match('/^field:[a-z][a-z0-9_]{0,39}$/', $field) || ! array_key_exists($op, self::OPERATORS)) {
+                throw new InvalidArgumentException('Unknown custom field.');
+            }
+
+            return;
+        }
         if (! array_key_exists($field, self::FIELDS) || ! array_key_exists($op, self::OPERATORS)) {
             throw new InvalidArgumentException('Unknown segment field or operator.');
         }

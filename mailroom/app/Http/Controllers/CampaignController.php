@@ -213,7 +213,7 @@ class CampaignController extends Controller
             'blockTypes' => EmailDesign::BLOCKS,
             'blockDefaults' => collect(EmailDesign::BLOCKS)->keys()->mapWithKeys(fn ($t) => [$t => app(EmailDesign::class)->defaults($t)]),
             'socialNetworks' => EmailDesign::SOCIAL,
-            'mergeTags' => EmailRenderer::MERGE_TAGS,
+            'mergeTags' => [...EmailRenderer::MERGE_TAGS, ...($campaign->audience?->fields->pluck('key')->all() ?? [])],
         ];
     }
 }

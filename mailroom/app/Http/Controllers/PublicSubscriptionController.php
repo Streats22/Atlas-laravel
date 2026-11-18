@@ -9,6 +9,7 @@ use App\Mail\ConfirmSubscriptionMail;
 use App\Models\Audience;
 use App\Models\CampaignSend;
 use App\Models\Contact;
+use App\Services\ContactFields;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -22,7 +23,7 @@ class PublicSubscriptionController extends Controller
         return view('public.form', ['audience' => $this->audience($publicId)]);
     }
 
-    public function subscribe(Request $request, string $publicId): View|RedirectResponse
+    public function subscribe(Request $request, string $publicId, ContactFields $fields): View|RedirectResponse
     {
         $audience = $this->audience($publicId);
 
@@ -35,7 +36,9 @@ class PublicSubscriptionController extends Controller
             'email' => ['required', 'email', 'max:190'],
             'first_name' => ['nullable', 'string', 'max:100'],
             'last_name' => ['nullable', 'string', 'max:100'],
-        ]);
+            'fields' => ['nullable', 'array'],
+            'consent' => [$audience->gdpr_enabled ? 'accepted' : 'nullable'],
+        ] + $fields->rules($audience, 'form'));
         $email = strtolower(trim($data['email']));
 
         /** @var Contact|null $contact */
@@ -49,6 +52,10 @@ class PublicSubscriptionController extends Controller
                 'first_name' => $data['first_name'] ?? null,
                 'last_name' => $data['last_name'] ?? null,
             ]) + [
+                'fields' => $fields->clean($audience, array_intersect_key((array) $request->input('fields', []), $audience->fields->where('show_on_form', true)->keyBy('key')->all()), $contact?->fields),
+                'consent_at' => $audience->gdpr_enabled ? now() : $contact?->consent_at,
+                'consent_text' => $audience->gdpr_enabled ? $audience->gdpr_text : $contact?->consent_text,
+                'signup_ip' => $request->ip(),
                 'status' => $status,
                 'subscribed_at' => $status === ContactStatus::Subscribed ? now() : null,
                 'unsubscribed_at' => null,

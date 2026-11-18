@@ -40,12 +40,13 @@ class ContactImportController extends Controller
     {
         return response()->streamDownload(function () use ($audience): void {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['email', 'first_name', 'last_name', 'status', 'tags', 'subscribed_at']);
-            $audience->contacts()->with('tags')->chunkById(500, function ($contacts) use ($out): void {
+            $keys = $audience->fields->pluck('key')->all();
+            fputcsv($out, ['email', 'first_name', 'last_name', ...$keys, 'status', 'tags', 'subscribed_at', 'consent_at']);
+            $audience->contacts()->with('tags')->chunkById(500, function ($contacts) use ($out, $keys): void {
                 foreach ($contacts as $c) {
                     fputcsv($out, array_map([self::class, 'csvSafe'], [
-                        $c->email, $c->first_name, $c->last_name, $c->status->value,
-                        $c->tags->pluck('name')->implode(', '), $c->subscribed_at?->toDateTimeString(),
+                        $c->email, $c->first_name, $c->last_name, ...array_map(fn ($k) => $c->field($k), $keys), $c->status->value,
+                        $c->tags->pluck('name')->implode(', '), $c->subscribed_at?->toDateTimeString(), $c->consent_at?->toDateTimeString(),
                     ]));
                 }
             });

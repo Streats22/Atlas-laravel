@@ -11,6 +11,7 @@ use App\Jobs\SendCampaignEmail;
 use App\Models\Automation;
 use App\Models\AutomationRun;
 use App\Models\Campaign;
+use App\Models\CampaignSend;
 use App\Models\Contact;
 
 /**
@@ -29,18 +30,48 @@ final class AutomationEngine
         $this->trigger($contact, AutomationTrigger::TagAdded, $tag);
     }
 
-    public function enroll(Automation $automation, Contact $contact): ?AutomationRun
+    /** @param  bool  $restart  Re-run a finished journey (yearly date triggers). */
+    public function enroll(Automation $automation, Contact $contact, bool $restart = false): ?AutomationRun
     {
         if (! $automation->isActive() || $contact->audience_id !== $automation->audience_id || $contact->status !== ContactStatus::Subscribed) {
             return null;
         }
 
         $run = $automation->runs()->firstOrCreate(['contact_id' => $contact->id], ['next_run_at' => now(), 'status' => 'active', 'position' => 0]);
+        // Yearly triggers: only restart a journey that finished long ago, never twice on the same day.
+        if (! $run->wasRecentlyCreated && $restart && $run->status !== 'active' && $run->updated_at->lt(now()->subDays(300))) {
+            $run->update(['status' => 'active', 'position' => 0, 'next_run_at' => now(), 'completed_at' => null]);
+            $run->wasRecentlyCreated = true;
+            // Emails from last year's run must go out again.
+            $automation->steps()->whereNotNull('campaign_id')->pluck('campaign_id')
+                ->each(fn (int $id) => CampaignSend::query()->where('campaign_id', $id)->where('contact_id', $contact->id)->delete());
+        }
         if ($run->wasRecentlyCreated) {
             $this->process($run);
         }
 
         return $run;
+    }
+
+    /** Daily: enrol contacts whose date field (YYYY-MM-DD or MM-DD) matches today's month and day. */
+    public function runDateTriggers(): int
+    {
+        $today = now()->format('m-d');
+        $count = 0;
+        Automation::query()->where('status', 'active')->where('trigger', AutomationTrigger::Date)->get()
+            ->each(function (Automation $automation) use ($today, &$count): void {
+                $key = (string) $automation->trigger_value;
+                $automation->audience->contacts()->subscribed()->whereNotNull('fields->'.$key)
+                    ->chunkById(500, function ($contacts) use ($automation, $key, $today, &$count): void {
+                        foreach ($contacts as $contact) {
+                            if (substr((string) $contact->field($key), -5) === $today) {
+                                $count += $this->enroll($automation, $contact, restart: true)?->wasRecentlyCreated ? 1 : 0;
+                            }
+                        }
+                    });
+            });
+
+        return $count;
     }
 
     public function processDue(): int

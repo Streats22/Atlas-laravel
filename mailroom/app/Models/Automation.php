@@ -40,8 +40,10 @@ class Automation extends Model
 
     public function triggerDescription(): string
     {
-        return $this->trigger === AutomationTrigger::TagAdded
-            ? "Tag “{$this->trigger_value}” is added"
-            : $this->trigger->label();
+        return match ($this->trigger) {
+            AutomationTrigger::TagAdded => "Tag “{$this->trigger_value}” is added",
+            AutomationTrigger::Date => 'On the date in “'.($this->audience?->fields->firstWhere('key', $this->trigger_value)?->label ?? $this->trigger_value).'”, every year',
+            default => $this->trigger->label(),
+        };
     }
 }

@@ -19,14 +19,16 @@ class Contact extends Model
     use HasFactory;
 
     protected $fillable = [
-        'email', 'first_name', 'last_name', 'status', 'source',
-        'subscribed_at', 'confirmed_at', 'unsubscribed_at',
+        'email', 'first_name', 'last_name', 'fields', 'notes', 'status', 'source',
+        'subscribed_at', 'confirmed_at', 'unsubscribed_at', 'consent_at', 'consent_text', 'signup_ip',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => ContactStatus::class,
+            'fields' => 'array',
+            'consent_at' => 'datetime',
             'subscribed_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'unsubscribed_at' => 'datetime',
@@ -68,6 +70,13 @@ class Contact extends Model
     public function scopeSubscribed(Builder $query): void
     {
         $query->where('status', ContactStatus::Subscribed);
+    }
+
+    public function field(string $key): ?string
+    {
+        $value = $this->fields[$key] ?? null;
+
+        return $value === null ? null : (string) $value;
     }
 
     public function fullName(): string

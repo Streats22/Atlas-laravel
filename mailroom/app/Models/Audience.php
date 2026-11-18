@@ -14,11 +14,11 @@ class Audience extends Model
     use HasFactory;
     use HasUlids;
 
-    protected $fillable = ['name', 'from_name', 'from_email', 'double_opt_in'];
+    protected $fillable = ['name', 'from_name', 'from_email', 'double_opt_in', 'gdpr_enabled', 'gdpr_text'];
 
     protected function casts(): array
     {
-        return ['double_opt_in' => 'boolean'];
+        return ['double_opt_in' => 'boolean', 'gdpr_enabled' => 'boolean'];
     }
 
     /** The public id (used in hosted form URLs) is a ULID; the primary key stays an integer. */
@@ -30,6 +30,11 @@ class Audience extends Model
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
+    }
+
+    public function fields(): HasMany
+    {
+        return $this->hasMany(AudienceField::class)->orderBy('position')->orderBy('id');
     }
 
     public function tags(): HasMany

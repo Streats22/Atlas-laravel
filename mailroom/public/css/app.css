@@ -224,3 +224,9 @@ label.inline select { width: auto; max-width: 220px; }
 .journey-add details { display: grid; justify-items: center; }
 .ab-fields[hidden], .ab-variable[hidden], .ab-variant[hidden] { display: none; }
 .badge-testing { background: var(--warn-soft); color: var(--warn); }
+.trigger-date[hidden] { display: none; }
+.field-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
+.field-row summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.field-row form { margin-top: 10px; }
+#field-options[hidden] { display: none; }
+.consent { align-items: flex-start; }

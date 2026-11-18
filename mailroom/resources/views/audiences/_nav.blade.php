@@ -11,6 +11,7 @@
 <nav class="tabs">
     <a href="{{ route('audiences.show', $audience) }}" @class(['active' => request()->routeIs('audiences.show')])>Contacts</a>
     <a href="{{ route('audiences.segments.index', $audience) }}" @class(['active' => request()->routeIs('audiences.segments.*')])>Segments</a>
+    <a href="{{ route('audiences.fields.index', $audience) }}" @class(['active' => request()->routeIs('audiences.fields.*')])>Fields</a>
     <a href="{{ route('audiences.import', $audience) }}" @class(['active' => request()->routeIs('audiences.import')])>Import</a>
     <a href="{{ route('audiences.form', $audience) }}" @class(['active' => request()->routeIs('audiences.form')])>Signup form</a>
 </nav>

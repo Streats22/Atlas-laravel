@@ -37,7 +37,9 @@ class SegmentRequest extends FormRequest
         return [function (Validator $validator): void {
             $query = app(SegmentQuery::class);
             foreach ((array) $this->input('conditions', []) as $i => $condition) {
-                if (! is_array($condition) || ! $query->isValid($condition)) {
+                $customKey = is_array($condition) && str_starts_with((string) ($condition['field'] ?? ''), 'field:') ? substr($condition['field'], 6) : null;
+                $unknownField = $customKey !== null && ! $this->route('audience')->fields()->where('key', $customKey)->exists();
+                if (! is_array($condition) || ! $query->isValid($condition) || $unknownField) {
                     $validator->errors()->add("conditions.{$i}", 'This condition is not valid.');
                 }
             }

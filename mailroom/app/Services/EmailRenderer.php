@@ -52,6 +52,15 @@ final class EmailRenderer
             'unsubscribe_url' => $unsubscribeUrl,
             'audience_name' => (string) $contact->audience?->name,
         ];
+        foreach ($contact->fields ?? [] as $key => $value) {
+            if (is_string($key) && ! array_key_exists($key, $values) && is_scalar($value)) {
+                $values[$key] = (string) $value;
+            }
+        }
+        // Defined fields without a value still resolve (to their fallback), never to the raw tag.
+        foreach ($contact->audience?->fields ?? [] as $field) {
+            $values[$field->key] ??= '';
+        }
 
         return (string) preg_replace_callback(
             '/\{\{\s*([a-z_]+)(?:\s*\|\s*([^}]*?))?\s*\}\}/',

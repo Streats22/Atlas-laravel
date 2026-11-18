@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\AutomationTrigger;
 use App\Enums\StepType;
 use App\Models\Audience;
+use App\Models\AudienceField;
 use App\Models\Automation;
 use App\Models\AutomationStep;
 use App\Models\Segment;
@@ -15,6 +16,7 @@ use App\Services\AutomationEngine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AutomationController extends Controller
@@ -31,7 +33,7 @@ class AutomationController extends Controller
     public function create(): View
     {
         return view('automations.create', [
-            'audiences' => Audience::query()->orderBy('name')->get(),
+            'audiences' => Audience::query()->with('fields')->orderBy('name')->get(),
             'presets' => AutomationBuilder::PRESETS,
         ]);
     }
@@ -47,7 +49,7 @@ class AutomationController extends Controller
 
     public function show(Automation $automation): View
     {
-        $automation->load(['audience.segments', 'steps.campaign']);
+        $automation->load(['audience.segments', 'audience.fields', 'steps.campaign']);
         $runs = $automation->runs();
 
         return view('automations.show', [
@@ -156,10 +158,22 @@ class AutomationController extends Controller
             'audience_id' => [$automation ? 'prohibited' : 'required', 'exists:audiences,id'],
             'trigger' => ['required', Rule::enum(AutomationTrigger::class)],
             'trigger_value' => ['nullable', 'required_if:trigger,tag_added', 'string', 'max:60'],
+            'trigger_field' => ['nullable', 'required_if:trigger,date', 'string', 'max:40'],
         ]);
-        if ($data['trigger'] !== AutomationTrigger::TagAdded->value) {
-            $data['trigger_value'] = null;
+        $data['trigger_value'] = match ($data['trigger']) {
+            AutomationTrigger::TagAdded->value => $data['trigger_value'],
+            AutomationTrigger::Date->value => $data['trigger_field'],
+            default => null,
+        };
+        if ($data['trigger'] === AutomationTrigger::Date->value) {
+            $audienceId = $automation?->audience_id ?? (int) $data['audience_id'];
+            $isDateField = AudienceField::query()->where('audience_id', $audienceId)->where('key', $data['trigger_field'])
+                ->whereIn('type', ['date', 'birthday'])->exists();
+            if (! $isDateField) {
+                throw ValidationException::withMessages(['trigger_field' => 'Choose a date or birthday field of this audience.']);
+            }
         }
+        unset($data['trigger_field']);
 
         return $data;
     }

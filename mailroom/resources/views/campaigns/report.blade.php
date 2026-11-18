@@ -9,7 +9,10 @@
             <span class="muted small">{{ $campaign->sent_at?->format('M j, Y H:i') }} · {{ $campaign->audience->name }}@if ($campaign->segment) · segment “{{ $campaign->segment->name }}”@endif @if ($campaign->tag) · tag “{{ $campaign->tag->name }}”@endif</span>
         </div>
         <div class="row">
-            <a class="btn btn-ghost" href="{{ route('campaigns.preview', $campaign) }}" target="_blank" rel="noopener">View email</a>
+            <a class="btn btn-ghost" href="{{ $campaign->webUrl() }}" target="_blank" rel="noopener">Public web version</a>
+            @if ($campaign->status === \App\Enums\CampaignStatus::Sent && auth()->user()->mayUse('campaigns.resend', 'POST'))
+                <form method="post" action="{{ route('campaigns.resend', $campaign) }}">@csrf<button class="btn">Resend to non-openers</button></form>
+            @endif
             <form method="post" action="{{ route('campaigns.duplicate', $campaign) }}">@csrf<button class="btn">Replicate</button></form>
         </div>
     </header>

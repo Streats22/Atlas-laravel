@@ -204,6 +204,17 @@ class CampaignController extends Controller
         return redirect()->route('campaigns.edit', $copy)->with('status', 'Campaign duplicated.');
     }
 
+    /** Draft a follow-up that only goes to people who received this campaign but didn't open it. */
+    public function resendToNonOpeners(Campaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->status === CampaignStatus::Sent && ! $campaign->isAutomation(), 409);
+        $copy = $campaign->replicate(['status', 'scheduled_at', 'sent_at', 'recipients_count', 'ab_test', 'segment_id', 'tag_id']);
+        $copy->fill(['name' => $campaign->name.' (non-openers)', 'status' => CampaignStatus::Draft, 'resend_of_id' => $campaign->id]);
+        $copy->save();
+
+        return redirect()->route('campaigns.edit', $copy)->with('status', 'Draft created for people who did not open. Consider a new subject line.');
+    }
+
     /** @return array<string, mixed> */
     private function formData(Campaign $campaign, EmailTemplates $templates): array
     {

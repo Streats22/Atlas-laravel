@@ -9,6 +9,7 @@
             <p class="muted">Share this link anywhere: social bios, QR codes, email signatures.</p>
             <input readonly value="{{ $url }}" onclick="this.select()" aria-label="Form URL">
             <a class="btn" href="{{ $url }}" target="_blank" rel="noopener">Open form</a>
+            <p class="muted small">Public archive of past campaigns: <a href="{{ route('public.archive', $audience->public_id) }}" target="_blank" rel="noopener">{{ route('public.archive', $audience->public_id) }}</a></p>
             <p class="muted small">Double opt-in is <strong>{{ $audience->double_opt_in ? 'on' : 'off' }}</strong>. <a href="{{ route('audiences.edit', $audience) }}">Change</a></p>
         </section>
         <section class="card stack">

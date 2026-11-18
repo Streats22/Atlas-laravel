@@ -247,3 +247,5 @@ td.bad { color: var(--danger); }
 .inline-form { display: inline; margin-left: 8px; }
 .url-field { display: flex; align-items: center; gap: 4px; font-weight: 400; min-width: 0; }
 .url-field .muted { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; }
+.api-doc { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; background: var(--bg); padding: 12px; border-radius: 8px; margin: 8px 0 0; }

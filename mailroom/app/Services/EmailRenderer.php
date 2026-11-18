@@ -30,6 +30,7 @@ final class EmailRenderer
             'campaign' => $campaign,
             'unsubscribeUrl' => $unsubscribeUrl,
             'pixel' => $send ? route('track.open', $send->token) : null,
+            'webUrl' => $send ? route('public.web', $send->token) : null,
         ])->render();
 
         return str_contains($html, '</body>')

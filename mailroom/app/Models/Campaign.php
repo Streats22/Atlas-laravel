@@ -17,7 +17,7 @@ class Campaign extends Model
     protected $attributes = ['kind' => 'regular', 'status' => 'draft', 'recipients_count' => 0, 'optimize_send_time' => false];
 
     protected $fillable = [
-        'kind', 'audience_id', 'segment_id', 'tag_id', 'name', 'subject', 'preview_text',
+        'kind', 'audience_id', 'segment_id', 'tag_id', 'resend_of_id', 'parent_id', 'rss', 'name', 'subject', 'preview_text',
         'from_name', 'from_email', 'html', 'design', 'ab_test', 'status', 'scheduled_at', 'optimize_send_time', 'sent_at', 'recipients_count',
     ];
 
@@ -27,6 +27,7 @@ class Campaign extends Model
             'status' => CampaignStatus::class,
             'design' => 'array',
             'ab_test' => 'array',
+            'rss' => 'array',
             'scheduled_at' => 'datetime',
             'optimize_send_time' => 'boolean',
             'sent_at' => 'datetime',
@@ -56,6 +57,22 @@ class Campaign extends Model
     public function automationStep(): HasOne
     {
         return $this->hasOne(AutomationStep::class);
+    }
+
+    public function resendOf(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'resend_of_id');
+    }
+
+    /** Signed, unguessable id for the public web version and archive. */
+    public function publicHash(): string
+    {
+        return substr(hash_hmac('sha256', 'campaign:'.$this->id, (string) config('app.key')), 0, 20);
+    }
+
+    public function webUrl(): string
+    {
+        return route('public.campaign', ['campaign' => $this->id, 'hash' => $this->publicHash()]);
     }
 
     public function isAutomation(): bool
@@ -91,6 +108,10 @@ class Campaign extends Model
 
         if ($this->tag_id !== null) {
             $query->whereHas('tags', fn (Builder $q) => $q->whereKey($this->tag_id));
+        }
+        if ($this->resend_of_id !== null) {
+            // Resend to non-openers: only people who received the original and didn't open it.
+            $query->whereHas('sends', fn (Builder $q) => $q->where('campaign_id', $this->resend_of_id)->whereNotNull('sent_at')->whereNull('opened_at'));
         }
 
         return $query->subscribed();

@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicCampaignController;
 use App\Http\Controllers\PublicSubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SegmentController;
@@ -33,6 +34,9 @@ Route::get('/confirm/{token}', [PublicSubscriptionController::class, 'confirm'])
 Route::get('/u/{token}', [PublicSubscriptionController::class, 'unsubscribePage'])->name('public.unsubscribe');
 Route::post('/u/{token}', [PublicSubscriptionController::class, 'unsubscribe'])->name('public.unsubscribe.do');
 Route::post('/webhooks/{provider}/{secret}', [WebhookController::class, 'handle'])->middleware('throttle:600,1')->name('webhooks');
+Route::get('/w/{token}', [PublicCampaignController::class, 'web'])->name('public.web');
+Route::get('/c/{campaign}/{hash}', [PublicCampaignController::class, 'show'])->name('public.campaign');
+Route::get('/archive/{publicId}', [PublicCampaignController::class, 'archive'])->name('public.archive');
 Route::get('/p/{slug}', [LandingPageController::class, 'show'])->name('landing.show');
 Route::get('/t/o/{token}.gif', [TrackingController::class, 'open'])->name('track.open');
 Route::get('/t/c/{token}/{hash}', [TrackingController::class, 'click'])->name('track.click');
@@ -69,6 +73,8 @@ Route::middleware(['auth', 'role'])->group(function (): void {
 
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('profile/keys', [ProfileController::class, 'createKey'])->name('profile.keys.store');
+    Route::delete('profile/keys/{key}', [ProfileController::class, 'deleteKey'])->name('profile.keys.destroy');
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -107,6 +113,7 @@ Route::middleware(['auth', 'role'])->group(function (): void {
         Route::post('schedule', [CampaignController::class, 'schedule'])->name('schedule');
         Route::post('unschedule', [CampaignController::class, 'unschedule'])->name('unschedule');
         Route::post('duplicate', [CampaignController::class, 'duplicate'])->name('duplicate');
+        Route::post('resend', [CampaignController::class, 'resendToNonOpeners'])->name('resend');
         Route::put('ab-test', [AbTestController::class, 'update'])->name('ab.update');
         Route::get('variants/{variant}', [AbTestController::class, 'editVariant'])->name('variants.edit')->scopeBindings();
         Route::put('variants/{variant}', [AbTestController::class, 'updateVariant'])->name('variants.update')->scopeBindings();

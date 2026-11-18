@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\ApiKey;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,7 +15,7 @@ class ProfileController extends Controller
 {
     public function edit(): View
     {
-        return view('users.profile', ['user' => auth()->user()]);
+        return view('users.profile', ['user' => auth()->user(), 'keys' => auth()->user()->apiKeys()->latest()->get()]);
     }
 
     public function update(Request $request): RedirectResponse
@@ -33,5 +34,20 @@ class ProfileController extends Controller
         $user->save();
 
         return back()->with('status', 'Profile saved.');
+    }
+
+    public function createKey(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['name' => ['required', 'string', 'max:80']]);
+
+        return back()->with('status', 'API key created. Copy it now: it will not be shown again.')->with('new_key', ApiKey::issue($request->user(), $data['name']));
+    }
+
+    public function deleteKey(Request $request, ApiKey $key): RedirectResponse
+    {
+        abort_unless($key->user_id === $request->user()->id, 404);
+        $key->delete();
+
+        return back()->with('status', 'API key revoked.');
     }
 }

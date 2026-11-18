@@ -38,6 +38,9 @@
         <section class="card stack">
             <h2>Setup</h2>
             <label>Campaign name <small class="muted">(internal)</small><input name="name" value="{{ old('name', $campaign->name) }}" required maxlength="150"></label>
+            @if ($campaign->resendOf)
+                <p class="flash">Resend of “{{ $campaign->resendOf->name }}”: only contacts who received it and didn't open it get this email.</p>
+            @endif
             @if ($campaign->isAutomation())
                 <input type="hidden" name="audience_id" id="audience" value="{{ $campaign->audience_id }}">
                 <select id="segment" hidden></select><select id="tag" hidden></select>

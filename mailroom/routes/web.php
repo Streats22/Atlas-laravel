@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Http\Controllers\AudienceController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ContactImportController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PublicSubscriptionController;
+use App\Http\Controllers\SegmentController;
+use App\Http\Controllers\TrackingController;
+use Illuminate\Support\Facades\Route;
+
+// Public: hosted signup form, confirmation, unsubscribe, tracking.
+Route::get('/f/{publicId}', [PublicSubscriptionController::class, 'form'])->name('public.form');
+Route::post('/f/{publicId}', [PublicSubscriptionController::class, 'subscribe'])
+    ->middleware('throttle:10,1')->name('public.subscribe');
+Route::get('/confirm/{token}', [PublicSubscriptionController::class, 'confirm'])->name('public.confirm');
+Route::get('/u/{token}', [PublicSubscriptionController::class, 'unsubscribePage'])->name('public.unsubscribe');
+Route::post('/u/{token}', [PublicSubscriptionController::class, 'unsubscribe'])->name('public.unsubscribe.do');
+Route::get('/t/o/{token}.gif', [TrackingController::class, 'open'])->name('track.open');
+Route::get('/t/c/{token}/{hash}', [TrackingController::class, 'click'])->name('track.click');
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/login', [AuthController::class, 'show'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+});
+
+Route::middleware('auth')->group(function (): void {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/', DashboardController::class)->name('dashboard');
+
+    Route::resource('audiences', AudienceController::class);
+    Route::get('audiences/{audience}/form', [AudienceController::class, 'form'])->name('audiences.form');
+
+    Route::scopeBindings()->prefix('audiences/{audience}')->name('audiences.')->group(function (): void {
+        Route::resource('contacts', ContactController::class)->except(['index', 'show']);
+        Route::post('contacts/bulk', [ContactController::class, 'bulk'])->name('contacts.bulk');
+        Route::get('import', [ContactImportController::class, 'create'])->name('import');
+        Route::post('import', [ContactImportController::class, 'store'])->name('import.store');
+        Route::get('export', [ContactImportController::class, 'export'])->name('export');
+        Route::resource('segments', SegmentController::class)->except(['show']);
+    });
+
+    Route::resource('campaigns', CampaignController::class);
+    Route::prefix('campaigns/{campaign}')->name('campaigns.')->group(function (): void {
+        Route::get('preview', [CampaignController::class, 'preview'])->name('preview');
+        Route::post('test', [CampaignController::class, 'test'])->name('test');
+        Route::post('send', [CampaignController::class, 'send'])->name('send');
+        Route::post('schedule', [CampaignController::class, 'schedule'])->name('schedule');
+        Route::post('unschedule', [CampaignController::class, 'unschedule'])->name('unschedule');
+        Route::post('duplicate', [CampaignController::class, 'duplicate'])->name('duplicate');
+    });
+});

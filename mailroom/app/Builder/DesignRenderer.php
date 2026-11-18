@@ -9,12 +9,19 @@ namespace App\Builder;
  */
 final class DesignRenderer
 {
+    /** @var array<string, mixed>|null */
+    private ?array $page = null;
+
     public function __construct(private readonly EmailDesign $design) {}
 
-    /** @param  bool  $editor  Adds data-block attributes so the editor can map clicks in the preview to blocks. */
-    public function render(mixed $design, bool $editor = false): string
+    /**
+     * @param  bool  $editor  Adds data-block attributes so the editor can map clicks in the preview to blocks.
+     * @param  array{form_action?:string, landing_id?:int, title?:string, description?:string}|null  $page  Landing-page context; null for emails.
+     */
+    public function render(mixed $design, bool $editor = false, ?array $page = null): string
     {
-        $d = $this->design->normalize($design);
+        $d = $this->design->normalize($design, $page !== null);
+        $this->page = $page;
         $s = $d['settings'];
         $rows = '';
         foreach ($d['blocks'] as $block) {
@@ -25,7 +32,11 @@ final class DesignRenderer
             $rows = '<tr><td style="padding:48px 24px;text-align:center;color:#9ca3af">Add blocks to start designing.</td></tr>';
         }
 
-        return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        $head = $page === null ? '' : '<title>'.e($page['title'] ?? '').'</title>'
+            .'<meta name="description" content="'.e($page['description'] ?? '').'"><meta property="og:title" content="'.e($page['title'] ?? '').'">'
+            .'<style>.mr-form{display:grid;gap:10px;max-width:420px;margin:0 auto}.mr-form input{font:inherit;padding:11px 12px;border:1px solid #d1d5db;border-radius:6px;width:100%;box-sizing:border-box}.mr-form button{font:inherit;font-weight:bold;padding:12px;border:0;border-radius:6px;cursor:pointer}</style>';
+
+        return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'.$head
             .'<style>body{margin:0}img{border:0;max-width:100%}a{color:'.$s['accent'].'}p{margin:0 0 12px}'
             .'@media (max-width:620px){.mr-col{display:block!important;width:100%!important}}'
             .($editor ? '[data-block]{cursor:pointer;outline:2px solid transparent;outline-offset:-2px}[data-block]:hover{outline-color:'.$s['accent'].'66}[data-block].mr-selected{outline-color:'.$s['accent'].'}' : '')
@@ -69,9 +80,28 @@ final class DesignRenderer
                 fn (string $key, string $url) => '<a href="'.e($url).'" style="color:'.$s['accent'].';text-decoration:none;font-weight:bold">'.e(EmailDesign::SOCIAL[$key]).'</a>',
                 array_keys($p['links']), $p['links'],
             )).'</div>',
+            'signup' => $this->signup($p, $s),
             'footer' => '<div style="text-align:'.$p['align'].';font-size:12px;color:#6b7280">'.$p['html'].'</div>',
             default => '',
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $p
+     * @param  array<string, mixed>  $s
+     */
+    private function signup(array $p, array $s): string
+    {
+        $action = e($this->page['form_action'] ?? '#');
+        $name = $p['show_name'] ? '<input name="first_name" placeholder="First name" autocomplete="given-name" aria-label="First name">' : '';
+
+        return '<form class="mr-form" method="post" action="'.$action.'">'
+            .'<input type="hidden" name="landing" value="'.(int) ($this->page['landing_id'] ?? 0).'">'
+            .'<input type="email" name="email" required placeholder="Email address" autocomplete="email" aria-label="Email address">'.$name
+            .'<div style="position:absolute;left:-5000px" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>'
+            .'<button type="submit" style="background:'.$s['accent'].';color:#fff">'.e($p['button']).'</button>'
+            .($p['note'] !== '' ? '<small style="color:#6b7280;text-align:center">'.e($p['note']).'</small>' : '')
+            .'</form>';
     }
 
     /** @param  array<string, mixed>  $p */

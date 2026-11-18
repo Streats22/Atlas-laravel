@@ -26,6 +26,7 @@ class CampaignRequest extends FormRequest
             'from_email' => ['required', 'email', 'max:190'],
             'html' => ['required_without:design', 'nullable', 'string', 'max:500000'],
             'design' => ['nullable', 'json', 'max:1000000'],
+            'optimize_send_time' => ['boolean'],
         ];
     }
 
@@ -38,6 +39,7 @@ class CampaignRequest extends FormRequest
     public function campaignData(): array
     {
         $data = $this->validated();
+        $data['optimize_send_time'] = $this->boolean('optimize_send_time');
         if (! empty($data['design'])) {
             $design = app(EmailDesign::class)->normalize(json_decode($data['design'], true));
             $data['design'] = $design;

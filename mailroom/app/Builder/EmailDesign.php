@@ -24,6 +24,15 @@ final class EmailDesign
         'footer' => 'Footer',
     ];
 
+    /** Blocks only available on landing pages (forms don't work inside email clients). */
+    public const PAGE_BLOCKS = ['signup' => 'Signup form'];
+
+    /** @return array<string, string> */
+    public static function blocks(bool $landing = false): array
+    {
+        return $landing ? self::BLOCKS + self::PAGE_BLOCKS : self::BLOCKS;
+    }
+
     public const SOCIAL = ['facebook' => 'Facebook', 'instagram' => 'Instagram', 'x' => 'X', 'linkedin' => 'LinkedIn', 'youtube' => 'YouTube', 'tiktok' => 'TikTok'];
 
     private const ALIGN = ['left', 'center', 'right'];
@@ -33,13 +42,14 @@ final class EmailDesign
     public function __construct(private readonly HtmlSanitizer $sanitizer) {}
 
     /** @return array{settings: array<string, mixed>, blocks: list<array{id:string, type:string, props:array<string, mixed>}>} */
-    public function normalize(mixed $design): array
+    public function normalize(mixed $design, bool $landing = false): array
     {
+        $allowed = self::blocks($landing);
         $design = is_array($design) ? $design : [];
         $s = is_array($design['settings'] ?? null) ? $design['settings'] : [];
         $blocks = [];
         foreach (array_slice(is_array($design['blocks'] ?? null) ? $design['blocks'] : [], 0, 200) as $block) {
-            if (is_array($block) && isset(self::BLOCKS[$block['type'] ?? ''])) {
+            if (is_array($block) && isset($allowed[$block['type'] ?? ''])) {
                 $blocks[] = [
                     'id' => is_string($block['id'] ?? null) && preg_match('/^[a-zA-Z0-9_-]{1,40}$/', $block['id']) ? $block['id'] : Str::random(8),
                     'type' => $block['type'],
@@ -72,17 +82,22 @@ final class EmailDesign
             'columns' => ['left' => '<p>Left column</p>', 'right' => '<p>Right column</p>'],
             'social' => ['links' => ['facebook' => 'https://facebook.com', 'instagram' => 'https://instagram.com']],
             'footer' => ['html' => '<p>Your company · Street 1 · City</p>'],
+            'signup' => ['button' => 'Subscribe', 'show_name' => true, 'note' => 'We respect your privacy. Unsubscribe at any time.'],
             default => [],
         });
     }
 
     /** @return array{settings: array<string, mixed>, blocks: list<array<string, mixed>>} */
-    public function starter(): array
+    public function starter(bool $landing = false): array
     {
+        $types = $landing ? ['heading', 'text', 'signup', 'divider', 'footer'] : ['image', 'heading', 'text', 'button', 'divider', 'footer'];
+
         return $this->normalize(['blocks' => array_map(
-            fn (string $type) => ['type' => $type, 'props' => $this->defaults($type)],
-            ['image', 'heading', 'text', 'button', 'divider', 'footer'],
-        )]);
+            fn (string $type) => ['type' => $type, 'props' => $landing && $type === 'text'
+                ? ['html' => '<p>Tell visitors what they get when they sign up, and how often you will email them.</p>']
+                : $this->defaults($type)],
+            $types,
+        )], $landing);
     }
 
     /**
@@ -114,6 +129,11 @@ final class EmailDesign
                     array_intersect_key(is_array($p['links'] ?? null) ? $p['links'] : [], self::SOCIAL),
                 )),
                 'align' => $align,
+            ],
+            'signup' => [
+                'button' => Values::text($p['button'] ?? 'Subscribe', 60) ?: 'Subscribe',
+                'show_name' => (bool) ($p['show_name'] ?? true),
+                'note' => Values::text($p['note'] ?? '', 300),
             ],
             'footer' => ['html' => $this->sanitizer->clean(Values::text($p['html'] ?? '', 5000)), 'align' => Values::pick($p['align'] ?? null, self::ALIGN, 'center')],
             default => [],

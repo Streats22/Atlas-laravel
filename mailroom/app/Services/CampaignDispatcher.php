@@ -30,13 +30,19 @@ final class CampaignDispatcher
             return app(AbTest::class)->start($campaign);
         }
         $count = 0;
+        $optimizer = app(SendTimeOptimizer::class);
+        $start = now();
 
-        $campaign->recipients()->select('contacts.id')->chunkById(500, function ($contacts) use ($campaign, &$count): void {
-            DB::transaction(function () use ($contacts, $campaign, &$count): void {
+        $campaign->recipients()->select('contacts.id')->chunkById(500, function ($contacts) use ($campaign, &$count, $optimizer, $start): void {
+            $hours = $campaign->optimize_send_time ? $optimizer->bestHours($campaign->audience_id, $contacts->pluck('id')) : [];
+            DB::transaction(function () use ($contacts, $campaign, &$count, $hours, $optimizer, $start): void {
                 foreach ($contacts as $contact) {
                     /** @var Contact $contact */
                     $send = $campaign->sends()->firstOrCreate(['contact_id' => $contact->id]);
-                    SendCampaignEmail::dispatch($send->id)->afterCommit();
+                    $job = SendCampaignEmail::dispatch($send->id)->afterCommit();
+                    if ($at = $optimizer->delayUntil($hours[$contact->id] ?? null, $start)) {
+                        $job->delay($at);
+                    }
                     $count++;
                 }
             });

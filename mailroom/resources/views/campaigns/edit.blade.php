@@ -75,6 +75,9 @@
                 <label>From email <input type="email" name="from_email" value="{{ old('from_email', $campaign->from_email) }}" required></label>
             </div>
             <label>Subject line <input name="subject" id="subject" value="{{ old('subject', $campaign->subject) }}" required maxlength="190"></label>
+            @unless ($campaign->isAutomation())
+                <label class="check"><input type="checkbox" name="optimize_send_time" value="1" @checked(old('optimize_send_time', $campaign->optimize_send_time))> Send-time optimisation: deliver to each contact at the hour they usually open (within 24 hours)</label>
+            @endunless
             <label>Preview text <small class="muted">(shown after the subject in most inboxes)</small><input name="preview_text" value="{{ old('preview_text', $campaign->preview_text) }}" maxlength="190"></label>
         </section>
 

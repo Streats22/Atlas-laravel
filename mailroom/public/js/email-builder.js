@@ -81,6 +81,7 @@
     async function renderPreview() {
         const body = new FormData();
         body.append('design', input.value);
+        if (root.dataset.landing === '1') body.append('landing', '1');
         const res = await fetch(root.dataset.previewUrl, { method: 'POST', body, headers: { 'X-CSRF-TOKEN': csrf } });
         const scroll = frame.contentWindow?.scrollY || 0;
         frame.srcdoc = await res.text();
@@ -274,6 +275,8 @@
             divider: () => [color(p, 'color', 'Colour', '#e5e7eb'), range(p, 'thickness', 'Thickness', 1, 8, 'px')],
             spacer: () => [range(p, 'height', 'Height', 4, 200, 'px')],
             social: () => { p.links = p.links || {}; return [...Object.entries(SOCIAL).map(([k, l]) => text(p.links, k, l, { type: 'url', placeholder: 'https://…' })), align(p)]; },
+            signup: () => [text(p, 'button', 'Button label'), check(p, 'show_name', 'Ask for first name'), text(p, 'note', 'Small print under the button'),
+                el('p', { class: 'muted small' }, 'Signups join this page\'s audience, follow its double opt-in setting and get the page tag.')],
             footer: () => [rich(p, 'html', 'Footer text'), align(p), el('p', { class: 'muted small' }, 'Include your postal address; an unsubscribe link is added automatically.')],
         }[block.type] || (() => []);
 

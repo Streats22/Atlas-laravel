@@ -12,6 +12,7 @@ use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContactImportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicSubscriptionController;
@@ -32,6 +33,7 @@ Route::get('/confirm/{token}', [PublicSubscriptionController::class, 'confirm'])
 Route::get('/u/{token}', [PublicSubscriptionController::class, 'unsubscribePage'])->name('public.unsubscribe');
 Route::post('/u/{token}', [PublicSubscriptionController::class, 'unsubscribe'])->name('public.unsubscribe.do');
 Route::post('/webhooks/{provider}/{secret}', [WebhookController::class, 'handle'])->middleware('throttle:600,1')->name('webhooks');
+Route::get('/p/{slug}', [LandingPageController::class, 'show'])->name('landing.show');
 Route::get('/t/o/{token}.gif', [TrackingController::class, 'open'])->name('track.open');
 Route::get('/t/c/{token}/{hash}', [TrackingController::class, 'click'])->name('track.click');
 
@@ -92,6 +94,9 @@ Route::middleware(['auth', 'role'])->group(function (): void {
         Route::post('steps/{step}/move', [AutomationController::class, 'moveStep'])->name('steps.move');
         Route::delete('steps/{step}', [AutomationController::class, 'deleteStep'])->name('steps.destroy');
     });
+
+    Route::resource('landing-pages', LandingPageController::class)->except(['show']);
+    Route::get('landing-pages/{landing_page}/preview', [LandingPageController::class, 'preview'])->name('landing-pages.preview');
 
     Route::resource('campaigns', CampaignController::class);
     Route::prefix('campaigns/{campaign}')->name('campaigns.')->group(function (): void {

@@ -9,7 +9,9 @@ use App\Mail\ConfirmSubscriptionMail;
 use App\Models\Audience;
 use App\Models\CampaignSend;
 use App\Models\Contact;
+use App\Models\LandingPage;
 use App\Services\ContactFields;
+use App\Services\TagSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -63,6 +65,15 @@ class PublicSubscriptionController extends Controller
 
             if ($audience->double_opt_in) {
                 Mail::to($contact->email)->send(new ConfirmSubscriptionMail($contact));
+            }
+        }
+
+        // Landing-page signups: count the conversion and apply the page's tag.
+        $page = $request->integer('landing') ? LandingPage::query()->where('audience_id', $audience->id)->find($request->integer('landing')) : null;
+        if ($page !== null && $contact !== null) {
+            $page->increment('signups');
+            if ($page->tag) {
+                app(TagSync::class)->attach($contact, $page->tag);
             }
         }
 

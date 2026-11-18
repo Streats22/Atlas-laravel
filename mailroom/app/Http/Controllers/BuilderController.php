@@ -17,7 +17,9 @@ class BuilderController extends Controller
     {
         $design = json_decode((string) $request->input('design', '{}'), true);
 
-        return response($renderer->render($design, editor: $request->boolean('editor', true)))
+        $page = $request->boolean('landing') ? ['form_action' => '#', 'title' => 'Preview'] : null;
+
+        return response($renderer->render($design, editor: $request->boolean('editor', true), page: $page))
             ->header('Content-Security-Policy', "script-src 'none'");
     }
 

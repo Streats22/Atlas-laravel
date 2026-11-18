@@ -26,6 +26,9 @@ final class CampaignDispatcher
         }
 
         $campaign->refresh();
+        if ($campaign->hasAbTest() && $campaign->variants()->count() >= 2) {
+            return app(AbTest::class)->start($campaign);
+        }
         $count = 0;
 
         $campaign->recipients()->select('contacts.id')->chunkById(500, function ($contacts) use ($campaign, &$count): void {

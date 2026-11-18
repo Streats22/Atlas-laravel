@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class CampaignSend extends Model
 {
     protected $fillable = [
-        'contact_id', 'sent_at', 'failed_at', 'error', 'opened_at', 'open_count',
+        'contact_id', 'variant_id', 'sent_at', 'failed_at', 'error', 'opened_at', 'open_count',
         'clicked_at', 'click_count', 'unsubscribed_at',
     ];
 
@@ -36,6 +36,11 @@ class CampaignSend extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(CampaignVariant::class);
     }
 
     public function contact(): BelongsTo

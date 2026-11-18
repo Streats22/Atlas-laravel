@@ -9,11 +9,12 @@ enum CampaignStatus: string
     case Draft = 'draft';
     case Scheduled = 'scheduled';
     case Sending = 'sending';
+    case Testing = 'testing';
     case Sent = 'sent';
 
     public function label(): string
     {
-        return ucfirst($this->value);
+        return $this === self::Testing ? 'A/B testing' : ucfirst($this->value);
     }
 
     public function isEditable(): bool

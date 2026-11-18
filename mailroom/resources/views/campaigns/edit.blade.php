@@ -135,6 +135,10 @@
         </div>
     </form>
 
+    @if ($campaign->exists && ! $campaign->isAutomation())
+        @include('campaigns._ab_test')
+    @endif
+
     @if ($campaign->exists)
         <div class="grid-2">
             <form method="post" action="{{ route('campaigns.test', $campaign) }}" class="card stack">

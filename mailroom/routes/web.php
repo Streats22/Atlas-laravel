@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AbTestController;
 use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AutomationController;
@@ -76,5 +77,9 @@ Route::middleware('auth')->group(function (): void {
         Route::post('schedule', [CampaignController::class, 'schedule'])->name('schedule');
         Route::post('unschedule', [CampaignController::class, 'unschedule'])->name('unschedule');
         Route::post('duplicate', [CampaignController::class, 'duplicate'])->name('duplicate');
+        Route::put('ab-test', [AbTestController::class, 'update'])->name('ab.update');
+        Route::get('variants/{variant}', [AbTestController::class, 'editVariant'])->name('variants.edit')->scopeBindings();
+        Route::put('variants/{variant}', [AbTestController::class, 'updateVariant'])->name('variants.update')->scopeBindings();
+        Route::post('variants/{variant}/winner', [AbTestController::class, 'pickWinner'])->name('variants.winner')->scopeBindings();
     });
 });

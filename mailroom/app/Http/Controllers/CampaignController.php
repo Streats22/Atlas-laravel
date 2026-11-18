@@ -69,7 +69,7 @@ class CampaignController extends Controller
             ->groupBy(fn ($at) => $at->format('Y-m-d H:00'))->map->count()->sortKeys()->take(48);
 
         return view('campaigns.report', [
-            'campaign' => $campaign->load(['audience', 'segment', 'tag']),
+            'campaign' => $campaign->load(['audience', 'segment', 'tag', 'variants']),
             'stats' => $campaign->stats(),
             'links' => $links,
             'opensByHour' => $opensByHour,
@@ -82,6 +82,8 @@ class CampaignController extends Controller
         if (! $campaign->status->isEditable()) {
             return redirect()->route('campaigns.show', $campaign);
         }
+
+        $campaign->load('variants');
 
         return view('campaigns.edit', $this->formData($campaign, $templates) + [
             'recipientCount' => $campaign->recipients()->count(),
@@ -192,7 +194,7 @@ class CampaignController extends Controller
 
     public function duplicate(Campaign $campaign): RedirectResponse
     {
-        $copy = $campaign->replicate(['status', 'scheduled_at', 'sent_at', 'recipients_count']);
+        $copy = $campaign->replicate(['status', 'scheduled_at', 'sent_at', 'recipients_count', 'ab_test']);
         $copy->name = $campaign->name.' (copy)';
         $copy->status = CampaignStatus::Draft;
         $copy->save();

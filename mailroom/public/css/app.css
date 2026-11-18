@@ -222,3 +222,5 @@ label.inline select { width: auto; max-width: 220px; }
 .journey-node .row { flex-wrap: nowrap; }
 .journey-node .row input, .journey-node .row select { width: auto; }
 .journey-add details { display: grid; justify-items: center; }
+.ab-fields[hidden], .ab-variable[hidden], .ab-variant[hidden] { display: none; }
+.badge-testing { background: var(--warn-soft); color: var(--warn); }

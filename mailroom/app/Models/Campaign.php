@@ -15,7 +15,7 @@ class Campaign extends Model
 {
     protected $fillable = [
         'kind', 'audience_id', 'segment_id', 'tag_id', 'name', 'subject', 'preview_text',
-        'from_name', 'from_email', 'html', 'design', 'status', 'scheduled_at', 'sent_at', 'recipients_count',
+        'from_name', 'from_email', 'html', 'design', 'ab_test', 'status', 'scheduled_at', 'sent_at', 'recipients_count',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class Campaign extends Model
         return [
             'status' => CampaignStatus::class,
             'design' => 'array',
+            'ab_test' => 'array',
             'scheduled_at' => 'datetime',
             'sent_at' => 'datetime',
         ];
@@ -56,6 +57,16 @@ class Campaign extends Model
     public function isAutomation(): bool
     {
         return $this->kind === 'automation';
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(CampaignVariant::class)->orderBy('label');
+    }
+
+    public function hasAbTest(): bool
+    {
+        return ! empty($this->ab_test['enabled']);
     }
 
     public function links(): HasMany

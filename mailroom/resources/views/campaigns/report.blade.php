@@ -21,6 +21,35 @@
         <div class="stat"><span>Unsubscribed</span><strong>{{ $stats['unsubscribes'] }}</strong></div>
     </div>
 
+    @if ($campaign->variants->isNotEmpty())
+        <section class="card">
+            <div class="row-between">
+                <h2>A/B test: {{ \App\Services\AbTest::VARIABLES[$campaign->ab_test['variable'] ?? 'subject'] ?? '' }}</h2>
+                @if ($campaign->status === \App\Enums\CampaignStatus::Testing)
+                    <span class="muted small">
+                        @if (($campaign->ab_test['winner_by'] ?? '') === 'manual') Pick a winner to send it to the remaining {{ number_format(($campaign->ab_test['total'] ?? 0) - $campaign->recipients_count) }} recipients.
+                        @else Winner by {{ $campaign->ab_test['winner_by'] }} is chosen {{ \Illuminate\Support\Carbon::parse($campaign->ab_test['decide_at'])->diffForHumans() }}.
+                        @endif
+                    </span>
+                @endif
+            </div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Variant</th><th>Tested</th><th>Sent</th><th>Open rate</th><th>Click rate</th><th></th></tr></thead>
+                <tbody>@foreach ($campaign->variants as $v)
+                    @php($vs = $v->stats())
+                    <tr>
+                        <td><strong>{{ $v->label }}</strong> @if ($v->is_winner)<span class="badge badge-sent">Winner</span>@endif</td>
+                        <td class="truncate">{{ match ($campaign->ab_test['variable'] ?? '') { 'subject' => $v->subject ?: $campaign->subject, 'from_name' => $v->from_name ?: $campaign->from_name, 'send_time' => '+' . $v->send_delay_hours . 'h', default => 'Content ' . $v->label } }}</td>
+                        <td>{{ $vs['sent'] }}</td><td>{{ $vs['open_rate'] }}%</td><td>{{ $vs['click_rate'] }}%</td>
+                        <td class="right">@if ($campaign->status === \App\Enums\CampaignStatus::Testing)
+                            <form method="post" action="{{ route('campaigns.variants.winner', [$campaign, $v]) }}" onsubmit="return confirm('Send variant {{ $v->label }} to everyone else?')">@csrf<button class="btn small">Send this one</button></form>
+                        @endif</td>
+                    </tr>
+                @endforeach</tbody>
+            </table></div>
+        </section>
+    @endif
+
     <div class="grid-2">
         <section class="card">
             <h2>Opens over time</h2>

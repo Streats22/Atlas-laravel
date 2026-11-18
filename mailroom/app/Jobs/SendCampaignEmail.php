@@ -37,7 +37,7 @@ class SendCampaignEmail implements ShouldQueue
     {
         $mailConfig->apply();
 
-        $send = CampaignSend::query()->with(['campaign', 'contact.audience'])->find($this->sendId);
+        $send = CampaignSend::query()->with(['campaign', 'contact.audience', 'variant'])->find($this->sendId);
 
         // Skip already-sent rows (retries) and contacts that unsubscribed after the list was frozen.
         if ($send === null || $send->sent_at !== null || $send->contact->status !== ContactStatus::Subscribed) {
@@ -46,7 +46,7 @@ class SendCampaignEmail implements ShouldQueue
 
         try {
             Mail::to($send->contact->email, $send->contact->fullName() ?: null)
-                ->send(new CampaignMail($send->campaign, $send->contact, $send));
+                ->send(new CampaignMail($send->variant?->apply($send->campaign) ?? $send->campaign, $send->contact, $send));
             $send->update(['sent_at' => now(), 'failed_at' => null, 'error' => null]);
         } catch (Throwable $e) {
             $send->update(['failed_at' => now(), 'error' => Str::limit($e->getMessage(), 250)]);

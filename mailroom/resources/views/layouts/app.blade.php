@@ -17,6 +17,7 @@
             <a href="{{ route('automations.index') }}" @class(['active' => request()->routeIs('automations.*')])>Automations</a>
             <a href="{{ route('templates.index') }}" @class(['active' => request()->routeIs('templates.*')])>Templates</a>
             <a href="{{ route('audiences.index') }}" @class(['active' => request()->routeIs('audiences.*')])>Audiences</a>
+            <a href="{{ route('reports.index') }}" @class(['active' => request()->routeIs('reports.*')])>Reports</a>
             <a href="{{ route('settings.edit') }}" @class(['active' => request()->routeIs('settings.*')])>Settings</a>
         </nav>
         <form method="post" action="{{ route('logout') }}" class="logout">

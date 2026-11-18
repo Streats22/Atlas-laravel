@@ -12,7 +12,7 @@ class CampaignSend extends Model
 {
     protected $fillable = [
         'contact_id', 'variant_id', 'sent_at', 'failed_at', 'error', 'opened_at', 'open_count',
-        'clicked_at', 'click_count', 'unsubscribed_at',
+        'clicked_at', 'click_count', 'unsubscribed_at', 'bounced_at', 'bounce_type', 'complained_at', 'client', 'device',
     ];
 
     protected function casts(): array
@@ -23,6 +23,8 @@ class CampaignSend extends Model
             'opened_at' => 'datetime',
             'clicked_at' => 'datetime',
             'unsubscribed_at' => 'datetime',
+            'bounced_at' => 'datetime',
+            'complained_at' => 'datetime',
         ];
     }
 

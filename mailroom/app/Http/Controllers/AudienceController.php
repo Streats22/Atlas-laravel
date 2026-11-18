@@ -43,6 +43,11 @@ class AudienceController extends Controller
 
         $contacts = $audience->contacts()
             ->with('tags')
+            ->withCount([
+                'sends as received_count' => fn (Builder $q) => $q->whereNotNull('sent_at'),
+                'sends as opened_count' => fn (Builder $q) => $q->whereNotNull('opened_at'),
+                'sends as clicked_count' => fn (Builder $q) => $q->whereNotNull('clicked_at'),
+            ])
             ->when($search !== '', fn (Builder $q) => $q->where(fn (Builder $w) => $w
                 ->whereLike('email', "%{$search}%")
                 ->orWhereLike('first_name', "%{$search}%")
@@ -63,8 +68,28 @@ class AudienceController extends Controller
             'counts' => $counts,
             'tags' => $audience->tags()->withCount('contacts')->orderBy('name')->get(),
             'segments' => $audience->segments()->orderBy('name')->get(),
+            'growth' => $this->growth($audience),
             'filters' => ['q' => $search, 'status' => $status?->value, 'tag' => $tagId],
         ]);
+    }
+
+    /** New contacts per week for the last 12 weeks. @return array<string, int> */
+    private function growth(Audience $audience): array
+    {
+        $start = now()->startOfWeek()->subWeeks(11);
+        $weeks = [];
+        for ($i = 0; $i < 12; $i++) {
+            $weeks[$start->copy()->addWeeks($i)->format('M j')] = 0;
+        }
+        $audience->contacts()->where('created_at', '>=', $start)->pluck('created_at')
+            ->each(function ($at) use (&$weeks): void {
+                $key = $at->copy()->startOfWeek()->format('M j');
+                if (isset($weeks[$key])) {
+                    $weeks[$key]++;
+                }
+            });
+
+        return $weeks;
     }
 
     public function edit(Audience $audience): View

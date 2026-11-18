@@ -92,7 +92,7 @@ class Campaign extends Model
         return $query->subscribed();
     }
 
-    /** @return array{sent:int, opens:int, clicks:int, unsubscribes:int, failed:int, open_rate:float, click_rate:float} */
+    /** @return array{sent:int, opens:int, clicks:int, unsubscribes:int, failed:int, bounces:int, complaints:int, open_rate:float, click_rate:float} */
     public function stats(): array
     {
         $sends = $this->sends();
@@ -106,6 +106,8 @@ class Campaign extends Model
             'clicks' => $clicks,
             'unsubscribes' => (clone $sends)->whereNotNull('unsubscribed_at')->count(),
             'failed' => (clone $sends)->whereNotNull('failed_at')->count(),
+            'bounces' => (clone $sends)->whereNotNull('bounced_at')->count(),
+            'complaints' => (clone $sends)->whereNotNull('complained_at')->count(),
             'open_rate' => $sent > 0 ? round($opens / $sent * 100, 1) : 0.0,
             'click_rate' => $sent > 0 ? round($clicks / $sent * 100, 1) : 0.0,
         ];

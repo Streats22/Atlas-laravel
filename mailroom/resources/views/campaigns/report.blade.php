@@ -19,6 +19,7 @@
         <div class="stat"><span>Open rate</span><strong>{{ $stats['open_rate'] }}%</strong><small>{{ $stats['opens'] }} unique opens</small><div class="bar"><i style="width: {{ min(100, $stats['open_rate']) }}%"></i></div></div>
         <div class="stat"><span>Click rate</span><strong>{{ $stats['click_rate'] }}%</strong><small>{{ $stats['clicks'] }} unique clicks</small><div class="bar"><i style="width: {{ min(100, $stats['click_rate']) }}%"></i></div></div>
         <div class="stat"><span>Unsubscribed</span><strong>{{ $stats['unsubscribes'] }}</strong></div>
+        <div class="stat"><span>Bounced</span><strong>{{ $stats['bounces'] }}</strong><small>{{ $stats['complaints'] }} spam complaints</small></div>
     </div>
 
     @if ($campaign->variants->isNotEmpty())
@@ -73,6 +74,23 @@
                 <p class="empty">No links in this email.</p>
             @endforelse
         </section>
+    </div>
+
+    <div class="grid-2">
+        @foreach (['Email clients' => $clients, 'Devices' => $devices] as $title => $rows)
+            <section class="card">
+                <h2>{{ $title }}</h2>
+                @php($total = max(1, $rows->sum()))
+                @forelse ($rows as $name => $count)
+                    <div class="breakdown"><span>{{ ucfirst($name) }}</span><div class="bar"><i style="width: {{ (int) round($count / $total * 100) }}%"></i></div><strong>{{ (int) round($count / $total * 100) }}%</strong></div>
+                @empty
+                    <p class="empty">No data yet.</p>
+                @endforelse
+                @if ($title === 'Email clients' && ($rows['Apple Mail (iOS)'] ?? 0) + ($rows['Apple Mail'] ?? 0) > 0)
+                    <p class="muted small">Apple Mail Privacy Protection preloads images, so opens from Apple Mail may be inflated. Click rate is the more reliable signal.</p>
+                @endif
+            </section>
+        @endforeach
     </div>
 
     <section class="card">

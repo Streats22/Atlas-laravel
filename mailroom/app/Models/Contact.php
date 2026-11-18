@@ -20,7 +20,7 @@ class Contact extends Model
 
     protected $fillable = [
         'email', 'first_name', 'last_name', 'fields', 'notes', 'status', 'source',
-        'subscribed_at', 'confirmed_at', 'unsubscribed_at', 'consent_at', 'consent_text', 'signup_ip',
+        'subscribed_at', 'confirmed_at', 'unsubscribed_at', 'consent_at', 'consent_text', 'signup_ip', 'soft_bounces',
     ];
 
     protected function casts(): array
@@ -77,6 +77,20 @@ class Contact extends Model
         $value = $this->fields[$key] ?? null;
 
         return $value === null ? null : (string) $value;
+    }
+
+    /**
+     * 1-5 star engagement rating: new contacts start at 2, opens and clicks raise it,
+     * long silence lowers it.
+     */
+    public function rating(int $received, int $opened, int $clicked): int
+    {
+        if ($received === 0) {
+            return 2;
+        }
+        $score = 1 + 2.5 * ($opened / $received) + 2.5 * min(1, $clicked / max(1, $received) * 3);
+
+        return (int) max(1, min(5, round($score)));
     }
 
     public function fullName(): string

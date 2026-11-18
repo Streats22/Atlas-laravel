@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Enums\ContactStatus;
 use App\Mail\CampaignMail;
 use App\Models\CampaignSend;
+use App\Services\Deliverability;
 use App\Services\MailConfig;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -50,6 +51,12 @@ class SendCampaignEmail implements ShouldQueue
             $send->update(['sent_at' => now(), 'failed_at' => null, 'error' => null]);
         } catch (Throwable $e) {
             $send->update(['failed_at' => now(), 'error' => Str::limit($e->getMessage(), 250)]);
+            // A permanent SMTP rejection of the recipient (550-554) is a hard bounce: don't retry.
+            if (preg_match('/\b55[0-4]\b/', $e->getMessage()) && preg_match('/recipient|mailbox|user|address/i', $e->getMessage())) {
+                app(Deliverability::class)->bounce($send->contact->email, true, $send->token);
+
+                return;
+            }
 
             throw $e;
         }

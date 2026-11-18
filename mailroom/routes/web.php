@@ -13,10 +13,12 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContactImportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicSubscriptionController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TrackingController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Public: hosted signup form, confirmation, unsubscribe, tracking.
@@ -26,6 +28,7 @@ Route::post('/f/{publicId}', [PublicSubscriptionController::class, 'subscribe'])
 Route::get('/confirm/{token}', [PublicSubscriptionController::class, 'confirm'])->name('public.confirm');
 Route::get('/u/{token}', [PublicSubscriptionController::class, 'unsubscribePage'])->name('public.unsubscribe');
 Route::post('/u/{token}', [PublicSubscriptionController::class, 'unsubscribe'])->name('public.unsubscribe.do');
+Route::post('/webhooks/{provider}/{secret}', [WebhookController::class, 'handle'])->middleware('throttle:600,1')->name('webhooks');
 Route::get('/t/o/{token}.gif', [TrackingController::class, 'open'])->name('track.open');
 Route::get('/t/c/{token}/{hash}', [TrackingController::class, 'click'])->name('track.click');
 
@@ -55,6 +58,8 @@ Route::middleware('auth')->group(function (): void {
         Route::resource('segments', SegmentController::class)->except(['show']);
     });
 
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('settings/test', [SettingsController::class, 'test'])->name('settings.test');

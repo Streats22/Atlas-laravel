@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Signup forms are embedded on other sites and mailbox providers POST one-click unsubscribes.
-        $middleware->validateCsrfTokens(except: ['f/*', 'u/*']);
+        $middleware->validateCsrfTokens(except: ['f/*', 'u/*', 'webhooks/*']);
         $middleware->redirectGuestsTo('/login');
     })
     ->withExceptions(function (Exceptions $exceptions): void {

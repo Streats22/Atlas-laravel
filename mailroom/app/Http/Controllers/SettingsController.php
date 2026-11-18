@@ -9,6 +9,7 @@ use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
@@ -17,7 +18,12 @@ class SettingsController extends Controller
 {
     public function edit(Settings $settings): View
     {
+        if ($settings->get('webhook_secret') === null) {
+            $settings->put(['webhook_secret' => Str::random(40)]);
+        }
+
         return view('settings.edit', [
+            'webhookUrls' => collect(WebhookController::PROVIDERS)->mapWithKeys(fn ($p) => [$p => route('webhooks', ['provider' => $p, 'secret' => $settings->get('webhook_secret')])]),
             'settings' => $settings->all(),
             'providers' => MailConfig::PROVIDERS,
             'hasPassword' => $settings->get('mail_password') !== null,

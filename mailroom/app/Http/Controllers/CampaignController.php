@@ -74,6 +74,8 @@ class CampaignController extends Controller
             'links' => $links,
             'opensByHour' => $opensByHour,
             'recent' => $campaign->sends()->with('contact')->whereNotNull('opened_at')->latest('opened_at')->limit(15)->get(),
+            'clients' => $campaign->sends()->whereNotNull('client')->pluck('client')->countBy()->sortDesc(),
+            'devices' => $campaign->sends()->whereNotNull('device')->pluck('device')->countBy()->sortDesc(),
         ]);
     }
 

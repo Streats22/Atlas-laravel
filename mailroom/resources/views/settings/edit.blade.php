@@ -49,6 +49,13 @@
                 <label>Send to <input type="email" name="to" value="{{ auth()->user()->email }}" required></label>
                 <button class="btn">Send test email</button>
             </form>
+            <section class="card stack">
+                <h2>Bounce &amp; complaint webhooks</h2>
+                <p class="muted small">Point your provider's bounce and spam-complaint webhook at the matching URL. Hard bounces are cleaned, 3 soft bounces clean an address, complaints unsubscribe it.</p>
+                @foreach ($webhookUrls as $provider => $url)
+                    <label>{{ ucfirst($provider) }} <input readonly value="{{ $url }}" onclick="this.select()"></label>
+                @endforeach
+            </section>
             <section class="card">
                 <h2>Authenticate your domain</h2>
                 <p class="muted">Inbox providers reject or spam-folder bulk mail from unauthenticated domains. Add these DNS records for the domain of your from address (exact values are in your provider's dashboard):</p>

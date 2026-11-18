@@ -230,3 +230,17 @@ label.inline select { width: auto; max-width: 220px; }
 .field-row form { margin-top: 10px; }
 #field-options[hidden] { display: none; }
 .consent { align-items: flex-start; }
+.breakdown { display: grid; grid-template-columns: 140px 1fr 48px; gap: 10px; align-items: center; padding: 4px 0; }
+.breakdown .bar { margin: 0; }
+.breakdown strong { text-align: right; }
+.stars { color: var(--warn); letter-spacing: 1px; white-space: nowrap; }
+.stars .off { color: var(--border); }
+.compare-chart { display: flex; align-items: flex-end; gap: 6px; height: 160px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.compare-col { flex: 1; height: 100%; display: flex; align-items: flex-end; gap: 2px; max-width: 48px; }
+.compare-col i { flex: 1; display: block; border-radius: 3px 3px 0 0; min-height: 2px; }
+.compare-col .open, .legend.open { background: var(--accent); }
+.compare-col .click, .legend.click { background: var(--ok); }
+.legend { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+td.good { color: var(--ok); font-weight: 600; }
+td.bad { color: var(--danger); }
+.histogram.growth { height: 90px; }

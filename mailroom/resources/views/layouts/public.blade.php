@@ -6,7 +6,7 @@
     <title>@yield('title') · {{ $audience->name ?? config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
-<body class="public">
+<body @class(['public', 'embed' => $embed ?? false])>
     <div class="public-card">
         @yield('content')
     </div>

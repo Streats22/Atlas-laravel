@@ -27,6 +27,7 @@ class CampaignRequest extends FormRequest
             'html' => ['required_without:design', 'nullable', 'string', 'max:500000'],
             'design' => ['nullable', 'json', 'max:1000000'],
             'optimize_send_time' => ['boolean'],
+            'kind' => ['nullable', 'in:regular,rss'],
         ];
     }
 
@@ -40,6 +41,15 @@ class CampaignRequest extends FormRequest
     {
         $data = $this->validated();
         $data['optimize_send_time'] = $this->boolean('optimize_send_time');
+        // The kind is fixed at creation; updates never turn a regular campaign into an RSS one.
+        if ($this->route('campaign') !== null) {
+            unset($data['kind']);
+        } else {
+            $data['kind'] = $data['kind'] ?? 'regular';
+            if ($data['kind'] === 'rss') {
+                $data['rss'] = ['url' => '', 'frequency' => 'weekly', 'weekday' => 1, 'hour' => 9];
+            }
+        }
         if (! empty($data['design'])) {
             $design = app(EmailDesign::class)->normalize(json_decode($data['design'], true));
             $data['design'] = $design;

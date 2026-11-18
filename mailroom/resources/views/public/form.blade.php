@@ -4,7 +4,7 @@
     <h1>{{ $audience->name }}</h1>
     <p class="muted">Get our latest updates by email.</p>
     @include('partials.flash')
-    <form method="post" action="{{ route('public.subscribe', $audience->public_id) }}" class="stack">
+    <form method="post" action="{{ route('public.subscribe', array_filter([$audience->public_id, 'embed' => ($embed ?? false) ? 1 : null])) }}" class="stack">
         <label>Email address <input type="email" name="email" value="{{ old('email') }}" required autocomplete="email"></label>
         <div class="grid-2">
             <label>First name <input name="first_name" value="{{ old('first_name') }}" autocomplete="given-name"></label>

@@ -1,19 +1,24 @@
 # Mailroom
 
-A self-hosted email marketing app built with Laravel 13. It lives in this repository next to the Atlas package but is a separate application with its own `composer.json`.
+A self-hosted email marketing platform built with Laravel 13: audiences, a drag & drop email builder, automations, A/B tests, landing pages, reports, a REST API and real sending through your own provider. It lives in this repository next to the Atlas package but is a separate application with its own `composer.json`.
 
-## Phase 1: what works now
+## Features
 
-| Area | Features |
-|------|----------|
-| Audiences | Multiple lists, default sender, double opt-in on/off |
-| Contacts | Add/edit, status (subscribed, pending, unsubscribed, cleaned), tags, search and filters, bulk tag/untag/unsubscribe/delete, CSV import (`,` or `;`, header aliases, never resubscribes opt-outs), CSV export (formula-injection safe) |
-| Segments | Saved filters on email, name, status, source, signup date, tag, "opened/clicked any campaign"; match all/any; live size and preview |
-| Signup forms | Hosted form, embeddable HTML snippet, honeypot, rate limit, double opt-in confirmation email |
-| Campaigns | 3 starter templates, HTML editor with live desktop/mobile preview, merge tags with fallbacks (`{{ first_name \| there }}`), preview text, target by audience/segment/tag, test sends, send now, schedule, duplicate |
-| Delivery | Queued jobs per recipient, retries, skip contacts who unsubscribed after queuing, RFC 8058 one-click `List-Unsubscribe` |
-| Reports | Recipients, unique opens/clicks, open and click rate, unsubscribes, failures, opens per hour, top links, recent activity, dashboard totals |
-| Tracking | Open pixel, click redirects (only to links stored for that campaign, so no open redirect) |
+| Area | What you get |
+|------|--------------|
+| **Audiences** | Multiple lists, custom fields (text, number, date, birthday, dropdown, phone, website), tags, search/filters, bulk actions, CSV import with field mapping (never resubscribes opt-outs), CSV export (formula-injection safe), star ratings, growth chart, notes, GDPR consent + per-contact JSON export |
+| **Segments** | Saved filters on any field, tag, status, signup date, engagement (opened/clicked any campaign); match all/any; live size |
+| **Signup** | Hosted form, embeddable HTML, pop-up script, landing pages, double opt-in, honeypot + rate limit, GDPR checkbox |
+| **Email builder** | Drag & drop blocks (heading, text, button, image, columns, divider, spacer, social, footer), click-to-edit canvas, rich text, image library/uploads, design settings, saved templates, or raw HTML |
+| **Campaigns** | Merge tags with fallbacks (`{{ first_name \| there }}`) incl. custom fields, preview text, target audience/segment/tag, test sends, schedule, send-time optimisation, duplicate, resend to non-openers, RSS-to-email |
+| **Review** | Inbox preview, desktop/mobile/dark-mode/plain-text previews, preview as any contact, pre-send checklist (blocks errors) |
+| **A/B testing** | Subject, from name, content or send time; 2-3 variants; test share; winner by opens/clicks after N hours, or manual |
+| **Automations** | Triggers: subscribe, tag added, yearly date field (birthdays), manual from a segment; steps: email, wait, add/remove tag; journey view with per-email stats |
+| **Delivery** | Any SMTP provider (presets for Mailgun, Postmark, SES, SendGrid, Brevo, Resend), encrypted credentials, rate limit, multipart HTML+text, RFC 8058 one-click unsubscribe, company address footer, "view in browser" link |
+| **Deliverability** | Bounce/complaint webhooks (Postmark, Mailgun, SES, SendGrid, Resend, Brevo, generic), hard bounce / 3 soft bounces → cleaned, complaint → unsubscribed |
+| **Reports** | Opens, clicks, unsubscribes, bounces, complaints, opens over time, top links, email clients, devices, per-variant results, cross-campaign comparison + CSV, public archive |
+| **Team** | Owner/Admin/Manager/Author/Viewer roles, email invitations, password reset, profile |
+| **API** | Bearer API keys (role-scoped): audiences, contact upsert/tags/delete, campaigns, reports, transactional send |
 
 ## Run it
 
@@ -22,12 +27,26 @@ cd mailroom
 composer install
 cp .env.example .env && php artisan key:generate
 touch database/database.sqlite && php artisan migrate --seed
+php artisan storage:link
 php artisan serve           # http://localhost:8000, log in as admin@example.com / password
-php artisan queue:work      # sends the queued emails
-php artisan schedule:work   # sends scheduled campaigns
+php artisan queue:work      # sends queued emails
+php artisan schedule:work   # scheduled campaigns, A/B winners, automations, RSS, birthdays
 ```
 
-Mail goes to `storage/logs/laravel.log` by default (`MAIL_MAILER=log`). Set SMTP, SES, Postmark or another Laravel mailer in `.env` to send for real.
+Until you connect a provider under **Settings**, emails go to `storage/logs/laravel.log`. Set `APP_URL` to your public URL so tracking links and images work in real inboxes.
+
+## API
+
+Create a key under **Profile → API keys**, then:
+
+```bash
+curl -H "Authorization: Bearer mr_..." http://localhost:8000/api/v1/audiences
+curl -X PUT -H "Authorization: Bearer mr_..." -H "Content-Type: application/json" \
+  -d '{"email":"ann@example.com","first_name":"Ann","tags":["customer"]}' \
+  http://localhost:8000/api/v1/audiences/1/contacts
+```
+
+All endpoints are listed on the profile page.
 
 ## Tests
 
@@ -35,11 +54,3 @@ Mail goes to `storage/logs/laravel.log` by default (`MAIL_MAILER=log`). Set SMTP
 vendor/bin/phpunit
 vendor/bin/pint --test
 ```
-
-## Roadmap (premium features, next phases)
-
-1. **Drag & drop email builder**: blocks, image uploads, saved templates.
-2. **Automations**: welcome series, tag-triggered journeys, date-based mails (birthdays).
-3. **A/B testing**: subject/content/send-time variants with automatic winner.
-4. **Advanced reporting**: geo and device data, comparison across campaigns, revenue.
-5. **Landing pages, multi-user teams with roles, send-time optimisation, bounce/complaint webhooks.**

@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public: hosted signup form, confirmation, unsubscribe, tracking.
 Route::get('/f/{publicId}', [PublicSubscriptionController::class, 'form'])->name('public.form');
+Route::get('/f/{publicId}/popup.js', [PublicSubscriptionController::class, 'popup'])->name('public.popup');
 Route::post('/f/{publicId}', [PublicSubscriptionController::class, 'subscribe'])
     ->middleware('throttle:10,1')->name('public.subscribe');
 Route::get('/confirm/{token}', [PublicSubscriptionController::class, 'confirm'])->name('public.confirm');
@@ -114,6 +115,7 @@ Route::middleware(['auth', 'role'])->group(function (): void {
         Route::post('unschedule', [CampaignController::class, 'unschedule'])->name('unschedule');
         Route::post('duplicate', [CampaignController::class, 'duplicate'])->name('duplicate');
         Route::post('resend', [CampaignController::class, 'resendToNonOpeners'])->name('resend');
+        Route::put('rss', [CampaignController::class, 'rss'])->name('rss');
         Route::put('ab-test', [AbTestController::class, 'update'])->name('ab.update');
         Route::get('variants/{variant}', [AbTestController::class, 'editVariant'])->name('variants.edit')->scopeBindings();
         Route::put('variants/{variant}', [AbTestController::class, 'updateVariant'])->name('variants.update')->scopeBindings();

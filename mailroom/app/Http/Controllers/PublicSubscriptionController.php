@@ -20,9 +20,19 @@ use Illuminate\View\View;
 
 class PublicSubscriptionController extends Controller
 {
-    public function form(string $publicId): View
+    public function form(Request $request, string $publicId): View
     {
-        return view('public.form', ['audience' => $this->audience($publicId)]);
+        return view('public.form', ['audience' => $this->audience($publicId), 'embed' => $request->boolean('embed')]);
+    }
+
+    /** Pop-up signup script: <script src=".../popup.js" data-delay="5" async></script> */
+    public function popup(string $publicId): Response
+    {
+        $audience = $this->audience($publicId);
+
+        return response(view('public.popup', ['url' => route('public.form', [$audience->public_id, 'embed' => 1]), 'key' => 'mr-popup-'.$audience->public_id])->render())
+            ->header('Content-Type', 'application/javascript; charset=utf-8')
+            ->header('Cache-Control', 'public, max-age=300');
     }
 
     public function subscribe(Request $request, string $publicId, ContactFields $fields): View|RedirectResponse
@@ -80,6 +90,7 @@ class PublicSubscriptionController extends Controller
         // Same response for new and existing addresses, so the form can't be used to probe the list.
         return view('public.message', [
             'audience' => $audience,
+            'embed' => $request->boolean('embed'),
             'title' => $audience->double_opt_in ? 'Almost done' : 'You\'re subscribed',
             'message' => $audience->double_opt_in
                 ? 'We sent you an email. Click the link inside to confirm your subscription.'

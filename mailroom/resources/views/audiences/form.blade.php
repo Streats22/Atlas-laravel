@@ -17,5 +17,11 @@
             <p class="muted">Paste this HTML into your website.</p>
             <textarea readonly rows="12" onclick="this.select()" aria-label="Embed code">{{ view('public._embed', ['audience' => $audience])->render() }}</textarea>
         </section>
+        <section class="card stack">
+            <h2>Pop-up form</h2>
+            <p class="muted">Shows your signup form in a pop-up after a few seconds, once per visitor. Paste before <code>&lt;/body&gt;</code>:</p>
+            <textarea readonly rows="3" onclick="this.select()" aria-label="Pop-up code">&lt;script src="{{ route('public.popup', $audience->public_id) }}" data-delay="5" async&gt;&lt;/script&gt;</textarea>
+            <p class="muted small">Change <code>data-delay</code> to set the delay in seconds.</p>
+        </section>
     </div>
 @endsection

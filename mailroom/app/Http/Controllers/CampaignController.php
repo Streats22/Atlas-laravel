@@ -16,6 +16,7 @@ use App\Services\CampaignChecklist;
 use App\Services\CampaignDispatcher;
 use App\Services\EmailRenderer;
 use App\Services\EmailTemplates;
+use App\Services\FeedFetcher;
 use App\Services\PlainText;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class CampaignController extends Controller
         $status = CampaignStatus::tryFrom((string) $request->query('status'));
 
         return view('campaigns.index', [
-            'campaigns' => Campaign::query()->with('audience')->where('kind', 'regular')
+            'campaigns' => Campaign::query()->with('audience')->whereIn('kind', ['regular', 'rss'])
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->latest()->paginate(20)->withQueryString(),
             'status' => $status,
@@ -44,11 +45,16 @@ class CampaignController extends Controller
             return redirect()->route('audiences.create')->with('status', 'Create an audience first.');
         }
 
+        $rss = $request->query('type') === 'rss';
+
         return view('campaigns.edit', $this->formData(new Campaign([
+            'kind' => $rss ? 'rss' : 'regular',
+            'rss' => $rss ? ['url' => '', 'frequency' => 'weekly', 'weekday' => 1, 'hour' => 9] : null,
+            'subject' => $rss ? 'This week: {{ rss_title }}' : null,
             'audience_id' => $audience->id,
             'from_name' => $audience->from_name,
             'from_email' => $audience->from_email,
-        ] + $templates->start((string) $request->query('template', 'builder'))), $templates));
+        ] + $templates->start($rss ? 'rss' : (string) $request->query('template', 'builder'))), $templates));
     }
 
     public function store(CampaignRequest $request): RedirectResponse
@@ -86,6 +92,10 @@ class CampaignController extends Controller
         }
 
         $campaign->load('variants');
+
+        if ($campaign->kind === 'rss') {
+            $campaign->setRelation('issues', Campaign::query()->where('parent_id', $campaign->id)->latest()->limit(20)->get());
+        }
 
         return view('campaigns.edit', $this->formData($campaign, $templates) + [
             'recipientCount' => $campaign->recipients()->count(),
@@ -204,6 +214,34 @@ class CampaignController extends Controller
         return redirect()->route('campaigns.edit', $copy)->with('status', 'Campaign duplicated.');
     }
 
+    public function rss(Request $request, Campaign $campaign, FeedFetcher $feeds): RedirectResponse
+    {
+        abort_unless($campaign->kind === 'rss', 404);
+        $data = $request->validate([
+            'url' => ['required', 'url:http,https', 'max:500'],
+            'frequency' => ['required', 'in:daily,weekly'],
+            'weekday' => ['required', 'integer', 'between:1,7'],
+            'hour' => ['required', 'integer', 'between:0,23'],
+            'action' => ['required', 'in:save,start,pause'],
+        ]);
+        try {
+            $feeds->assertPublicUrl($data['url']);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['url' => $e->getMessage()]);
+        }
+        $status = match ($data['action']) {
+            'start' => CampaignStatus::Scheduled,
+            'pause' => CampaignStatus::Draft,
+            default => $campaign->status,
+        };
+        $campaign->update([
+            'status' => $status,
+            'rss' => array_merge($campaign->rss ?? [], ['url' => $data['url'], 'frequency' => $data['frequency'], 'weekday' => (int) $data['weekday'], 'hour' => (int) $data['hour']]),
+        ]);
+
+        return back()->with('status', $status === CampaignStatus::Scheduled ? 'RSS campaign is running.' : 'RSS settings saved.');
+    }
+
     /** Draft a follow-up that only goes to people who received this campaign but didn't open it. */
     public function resendToNonOpeners(Campaign $campaign): RedirectResponse
     {
@@ -226,7 +264,7 @@ class CampaignController extends Controller
             'blockTypes' => EmailDesign::BLOCKS,
             'blockDefaults' => collect(EmailDesign::BLOCKS)->keys()->mapWithKeys(fn ($t) => [$t => app(EmailDesign::class)->defaults($t)]),
             'socialNetworks' => EmailDesign::SOCIAL,
-            'mergeTags' => [...EmailRenderer::MERGE_TAGS, ...($campaign->audience?->fields->pluck('key')->all() ?? [])],
+            'mergeTags' => [...EmailRenderer::MERGE_TAGS, ...($campaign->audience?->fields->pluck('key')->all() ?? []), ...($campaign->kind === 'rss' ? ['rss_items', 'rss_title'] : [])],
         ];
     }
 }

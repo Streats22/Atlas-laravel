@@ -36,6 +36,7 @@ final class EmailTemplates
             'simple' => 'Simple text',
             'newsletter' => 'Newsletter',
             'announcement' => 'Product announcement',
+            'rss' => 'RSS digest',
         ];
     }
 

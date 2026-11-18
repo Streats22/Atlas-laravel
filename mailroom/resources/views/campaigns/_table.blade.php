@@ -7,7 +7,7 @@
         @foreach ($campaigns as $c)
             @php($s = $c->status->isEditable() ? null : $c->stats())
             <tr>
-                <td><a href="{{ route('campaigns.show', $c) }}"><strong>{{ $c->name }}</strong></a><div class="muted small">{{ $c->subject }}</div></td>
+                <td><a href="{{ route('campaigns.show', $c) }}"><strong>{{ $c->name }}</strong></a>@if ($c->kind === 'rss') <span class="badge">RSS</span>@endif<div class="muted small">{{ $c->subject }}</div></td>
                 <td>{{ $c->audience->name }}</td>
                 <td><span class="badge badge-{{ $c->status->value }}">{{ $c->status->label() }}</span>
                     <div class="muted small">

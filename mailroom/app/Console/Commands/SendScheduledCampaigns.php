@@ -19,6 +19,7 @@ class SendScheduledCampaigns extends Command
     public function handle(CampaignDispatcher $dispatcher, AbTest $abTest): int
     {
         Campaign::query()
+            ->where('kind', 'regular')
             ->where('status', CampaignStatus::Scheduled)
             ->where('scheduled_at', '<=', now())
             ->each(function (Campaign $campaign) use ($dispatcher): void {

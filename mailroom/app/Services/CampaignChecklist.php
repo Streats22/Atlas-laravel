@@ -20,6 +20,8 @@ final class CampaignChecklist
         $recipients = $campaign->recipients()->count();
         if ($campaign->isAutomation()) {
             $add('ok', 'Recipients', 'Sent by an automation when contacts reach this step.');
+        } elseif ($campaign->kind === 'rss' && ! str_contains($campaign->html, 'rss_items')) {
+            $add('error', 'RSS items', 'Add {{ rss_items }} where the feed items should appear.');
         } elseif ($recipients > 0) {
             $add('ok', 'Recipients', number_format($recipients).' subscribed contacts will receive this campaign.');
         } else {
@@ -55,7 +57,7 @@ final class CampaignChecklist
             : $add('ok', 'Images', count($images[0]).' images, all with alt text.');
 
         preg_match_all('/\{\{\s*([a-z_]+)/', $html.$subject, $tags);
-        $unknown = array_diff(array_unique($tags[1]), EmailRenderer::MERGE_TAGS, $campaign->audience->fields->pluck('key')->all());
+        $unknown = array_diff(array_unique($tags[1]), EmailRenderer::MERGE_TAGS, $campaign->audience->fields->pluck('key')->all(), $campaign->kind === 'rss' ? ['rss_items', 'rss_title'] : []);
         $unknown
             ? $add('error', 'Merge tags', 'Unknown merge tags: '.implode(', ', $unknown))
             : $add('ok', 'Merge tags', 'All merge tags are valid.');

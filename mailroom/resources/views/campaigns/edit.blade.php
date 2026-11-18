@@ -34,9 +34,9 @@
 
     <form method="post" id="campaign-form" action="{{ $campaign->exists ? route('campaigns.update', $campaign) : route('campaigns.store') }}" class="editor">
         @csrf
-        @if ($campaign->exists) @method('put') @endif
+        @if ($campaign->exists) @method('put') @else <input type="hidden" name="kind" value="{{ $campaign->kind }}"> @endif
         <section class="card stack">
-            <h2>Setup</h2>
+            <h2>Setup @if ($campaign->kind === 'rss')<span class="badge">RSS</span>@endif</h2>
             <label>Campaign name <small class="muted">(internal)</small><input name="name" value="{{ old('name', $campaign->name) }}" required maxlength="150"></label>
             @if ($campaign->resendOf)
                 <p class="flash">Resend of “{{ $campaign->resendOf->name }}”: only contacts who received it and didn't open it get this email.</p>
@@ -141,7 +141,9 @@
         </div>
     </form>
 
-    @if ($campaign->exists && ! $campaign->isAutomation())
+    @if ($campaign->exists && $campaign->kind === 'rss')
+        @include('campaigns._rss')
+    @elseif ($campaign->exists && ! $campaign->isAutomation())
         @include('campaigns._ab_test')
     @endif
 

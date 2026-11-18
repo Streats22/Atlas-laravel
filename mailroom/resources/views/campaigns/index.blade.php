@@ -3,7 +3,10 @@
 @section('content')
     <header class="page-head">
         <h1>Campaigns</h1>
-        <a class="btn btn-primary" href="{{ route('campaigns.create') }}">Create campaign</a>
+        <div class="row">
+            <a class="btn" href="{{ route('campaigns.create', ['type' => 'rss']) }}">RSS campaign</a>
+            <a class="btn btn-primary" href="{{ route('campaigns.create') }}">Create campaign</a>
+        </div>
     </header>
     <nav class="tabs">
         <a href="{{ route('campaigns.index') }}" @class(['active' => ! $status])>All</a>

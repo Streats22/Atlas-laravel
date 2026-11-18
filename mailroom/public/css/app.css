@@ -249,3 +249,6 @@ td.bad { color: var(--danger); }
 .url-field .muted { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; }
 .api-doc { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; background: var(--bg); padding: 12px; border-radius: 8px; margin: 8px 0 0; }
+body.public.embed { min-height: 0; padding: 0; display: block; }
+body.public.embed .public-card { border: 0; border-radius: 0; max-width: none; }
+.card p, .card code { overflow-wrap: anywhere; }
